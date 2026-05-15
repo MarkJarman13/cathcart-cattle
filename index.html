@@ -249,10 +249,8 @@ button{font-family:inherit;cursor:pointer}
 <script>
 // ══ SUPABASE INIT ══════════════════════════════════════════════════
 const SB_URL = 'https://kuyxajkawolcdthghrjh.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1eXhhamthd29sY2R0aGdocmpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3OTYzNjIsImV4cCI6MjA5NDM3MjM2Mn0.-duF3VKGjT8pnvQxby5cJ7BWCG9xIbli_A4OsBK8f1M';
-const db = supabase.createClient(SB_URL, SB_KEY, {
-  auth: { persistSession: false }
-});
+const SB_KEY = 'sb_publishable_9X2t0cKe_6ft65cb6bOQAw_aCCPhYCi';
+const db = supabase.createClient(SB_URL, SB_KEY);
 
 // ══ STATE ══════════════════════════════════════════════════════════
 let APP = {
