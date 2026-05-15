@@ -8,22 +8,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#ffffff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
+:root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#fff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh}
 .hidden{display:none!important}
 button{font-family:inherit;cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
-#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-.login-logo{width:64px;height:64px;border-radius:16px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;margin-bottom:16px}
-.login-title{font-size:22px;font-weight:700;margin-bottom:4px}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.login-logo{width:72px;height:72px;border-radius:18px;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;margin-bottom:16px;box-shadow:0 4px 16px rgba(26,107,58,.3)}
+.login-title{font-size:24px;font-weight:700;margin-bottom:4px}
 .login-sub{font-size:13px;color:var(--text2);margin-bottom:28px;text-align:center;line-height:1.6}
-.login-card{background:var(--card);border:var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:360px;box-shadow:0 2px 12px rgba(0,0,0,.07)}
+.login-card{background:var(--card);border:var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:360px;box-shadow:0 2px 16px rgba(0,0,0,.08)}
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
 .fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:var(--border);border-radius:8px;font-size:14px;background:#fff;color:var(--text);outline:none;font-family:inherit}
 .fg input:focus,.fg select:focus{border-color:var(--green-mid)}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:16px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #ccc;background:#fff;transition:all .15s}
+.pin-dot.filled{background:var(--green);border-color:var(--green)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.pin-key{padding:16px;border:var(--border);border-radius:10px;background:#fff;font-size:20px;font-weight:500;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pin-key:active{background:var(--green-light)}
 .btn-primary{width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600}
 .login-hint{margin-top:12px;text-align:center;font-size:11px;color:var(--text3)}
+.pin-error{color:var(--red);font-size:12px;text-align:center;margin-top:8px;min-height:18px}
+
+/* APP */
 #app-shell{min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 .topbar{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .tb-left{display:flex;align-items:center;gap:10px}
@@ -35,9 +46,11 @@ button{font-family:inherit;cursor:pointer}
 .screen{display:none}
 .screen.active{display:block}
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:var(--border);display:flex;z-index:50;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;padding:8px 0 6px;color:var(--text3);font-size:10px}
-.bnav-btn i{font-size:22px}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;padding:8px 0 4px;color:var(--text3);font-size:9px}
+.bnav-btn i{font-size:20px}
 .bnav-btn.active{color:var(--green)}
+
+/* CARDS */
 .card{background:var(--card);border:var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:13px;font-weight:600}
 .add-btn{background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:500}
@@ -47,9 +60,10 @@ button{font-family:inherit;cursor:pointer}
 .badge-red{background:var(--red-light);color:var(--red)}
 .badge-blue{background:var(--blue-light);color:var(--blue)}
 .badge-gray{background:#f0f0f0;color:#666}
+.badge-purple{background:#ede9fe;color:#5b21b6}
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .metric{background:var(--card);border:var(--border);border-radius:var(--radius);padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.metric-val{font-size:26px;font-weight:700;color:var(--green)}
+.metric-val{font-size:24px;font-weight:700;color:var(--green)}
 .metric-lbl{font-size:11px;color:var(--text2);margin-top:2px}
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
 .tbl th{text-align:left;color:var(--text2);font-weight:500;padding:5px 8px 8px;border-bottom:var(--border)}
@@ -62,59 +76,68 @@ button{font-family:inherit;cursor:pointer}
 .search-input:focus{border-color:var(--green-mid)}
 .empty-state{text-align:center;padding:28px 16px;color:var(--text3);font-size:13px}
 .loading{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+
+/* WIZARD */
 .wizard{background:var(--card);border:var(--border);border-radius:var(--radius);padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
 .progress-bar{height:4px;background:#e5e7eb;border-radius:2px;margin-bottom:16px;overflow:hidden}
 .progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
 .step-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
 .step-title{font-size:16px;font-weight:600;margin-bottom:16px}
-.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-.opt-btn{padding:14px 8px;border:var(--border);border-radius:var(--radius);background:#fff;text-align:center;font-size:12px;color:var(--text);line-height:1.4}
-.opt-btn i{display:block;font-size:24px;margin-bottom:6px;color:var(--text2)}
+.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.opt-btn{padding:12px 8px;border:var(--border);border-radius:var(--radius);background:#fff;text-align:center;font-size:11px;color:var(--text);line-height:1.4}
+.opt-btn i{display:block;font-size:22px;margin-bottom:5px;color:var(--text2)}
 .opt-btn.sel{border-color:var(--green-mid);background:var(--green-light);color:var(--green);font-weight:500}
 .opt-btn.sel i{color:var(--green)}
-.pill-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.pill{padding:6px 14px;border-radius:16px;font-size:12px;border:var(--border);background:#fff;color:var(--text2)}
+.opt-btn.red-sel{border-color:#991b1b;background:var(--red-light);color:var(--red);font-weight:500}
+.pill-group{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.pill{padding:5px 12px;border-radius:16px;font-size:12px;border:var(--border);background:#fff;color:var(--text2)}
 .pill.sel{background:var(--green-light);color:var(--green);border-color:var(--green-mid);font-weight:500}
 .tag-chip{display:inline-flex;align-items:center;gap:4px;background:var(--green-light);color:var(--green);border-radius:10px;padding:3px 8px;font-size:12px;margin:3px}
 .nav-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .btn-back{padding:8px 16px;border:var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:13px}
 .btn-next{padding:8px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500}
-.btn-danger{padding:8px 16px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;font-size:13px}
-.photo-area{border:2px dashed #ccc;border-radius:var(--radius);padding:20px 16px;text-align:center;background:#fafafa;margin-bottom:10px}
-.photo-area i{font-size:28px;color:var(--text3)}
-.photo-area p{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.5}
-.photo-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.photo-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .photo-btn{padding:10px 8px;border:var(--border);border-radius:8px;background:#fff;text-align:center;font-size:12px;color:var(--text2)}
-.photo-btn i{display:block;font-size:20px;margin-bottom:4px;color:var(--text2)}
+.photo-btn i{display:block;font-size:20px;margin-bottom:4px}
 .success-screen{text-align:center;padding:40px 16px}
 .success-icon{font-size:56px;color:var(--green);margin-bottom:16px}
+.treatment-block{border:var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fafafa}
+.treatment-block-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--green);display:flex;align-items:center;gap:6px}
+.cattle-select-item{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:var(--border);font-size:13px;cursor:pointer}
+.cattle-select-item:last-child{border-bottom:none}
+.cattle-select-item.selected{background:var(--green-light)}
+.cattle-checkbox{width:18px;height:18px;border-radius:4px;border:var(--border);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cattle-checkbox.checked{background:var(--green);border-color:var(--green)}
+
+/* FARM TAB */
+.camp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.camp-card{border:var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.camp-card.occupied{border-color:var(--green-mid);background:var(--green-light)}
+.camp-card.empty{background:#fafafa;opacity:.8}
+.camp-card-name{font-size:12px;font-weight:600;margin-bottom:4px}
+.camp-card-count{font-size:20px;font-weight:700;color:var(--green)}
+.camp-card-lbl{font-size:10px;color:var(--text3)}
+.camp-card.empty .camp-card-count{color:var(--text3);font-size:16px}
+
+/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
 .modal-sheet{background:var(--card);border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;position:relative}
 .modal-title{font-size:16px;font-weight:600;margin-bottom:16px;padding-right:28px}
 .modal-close{position:absolute;right:20px;top:20px;background:none;border:none;font-size:22px;color:var(--text2);line-height:1}
 .btn-full{width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;margin-top:8px}
+.btn-danger-full{width:100%;padding:11px;background:var(--red-light);color:var(--red);border:none;border-radius:8px;font-size:13px;margin-top:8px}
 .profile-hd{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}
 .profile-avatar{width:52px;height:52px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .tl-item{display:flex;gap:10px;padding:8px 0;border-bottom:var(--border);font-size:12px;line-height:1.5}
 .tl-item:last-child{border-bottom:none}
 .tl-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .sec-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin:14px 0 8px}
-.cattle-select-item{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:var(--border);font-size:13px;cursor:pointer}
-.cattle-select-item:last-child{border-bottom:none}
-.cattle-select-item.selected{background:var(--green-light)}
-.cattle-checkbox{width:18px;height:18px;border-radius:4px;border:var(--border);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cattle-checkbox.checked{background:var(--green);border-color:var(--green)}
-.treatment-block{border:var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:#fafafa}
-.treatment-block-title{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--green)}
-.split-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-bottom:var(--border);font-size:12px}
-.split-item:last-child{border-bottom:none}
-.split-cb{width:18px;height:18px;border-radius:4px;border:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer}
-.split-cb.on{background:var(--green);border-color:var(--green)}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-logo"><i class="ti ti-cow"></i></div>
   <div class="login-title">Cathcart Cattle</div>
@@ -122,19 +145,44 @@ button{font-family:inherit;cursor:pointer}
   <div class="login-card">
     <div class="fg">
       <label>Your name</label>
-      <select id="login-manager">
+      <select id="login-manager" onchange="showPinEntry()">
         <option value="">— Select your name —</option>
         <option>Rob Fletcher</option>
         <option>Melkaya</option>
         <option>Frank Winterton</option>
-        <option>Owner</option>
+        <option>Browns</option>
+        <option>Jarmans</option>
       </select>
     </div>
-    <button class="btn-primary" onclick="doLogin()">Sign in</button>
-    <div class="login-hint">No password needed — tap your name to continue</div>
+    <div id="pin-section" class="hidden">
+      <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">Enter your PIN</label>
+      <div class="pin-dots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pin-keypad">
+        <button class="pin-key" onclick="pinPress('1')">1</button>
+        <button class="pin-key" onclick="pinPress('2')">2</button>
+        <button class="pin-key" onclick="pinPress('3')">3</button>
+        <button class="pin-key" onclick="pinPress('4')">4</button>
+        <button class="pin-key" onclick="pinPress('5')">5</button>
+        <button class="pin-key" onclick="pinPress('6')">6</button>
+        <button class="pin-key" onclick="pinPress('7')">7</button>
+        <button class="pin-key" onclick="pinPress('8')">8</button>
+        <button class="pin-key" onclick="pinPress('9')">9</button>
+        <button class="pin-key" onclick="pinClear()" style="font-size:14px">Clear</button>
+        <button class="pin-key" onclick="pinPress('0')">0</button>
+        <button class="pin-key" onclick="pinDelete()" style="font-size:18px">⌫</button>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+    </div>
+    <div class="login-hint">Select your name then enter your PIN</div>
   </div>
 </div>
 
+<!-- APP -->
 <div id="app-shell" class="hidden">
   <div class="topbar">
     <div class="tb-left">
@@ -155,13 +203,26 @@ button{font-family:inherit;cursor:pointer}
         <div class="metric"><div class="metric-val" id="d-sessions">—</div><div class="metric-lbl">Sessions</div></div>
         <div class="metric"><div class="metric-val" id="d-calves">—</div><div class="metric-lbl">Calves YTD</div></div>
       </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-val" id="d-deaths" style="color:var(--red)">—</div><div class="metric-lbl">Deaths YTD</div></div>
+        <div class="metric"><div class="metric-val" id="d-sales" style="color:var(--amber)">—</div><div class="metric-lbl">Sales YTD</div></div>
+        <div class="metric"><div class="metric-val" id="d-frank" style="color:var(--blue)">—</div><div class="metric-lbl">Frank's cattle</div></div>
+      </div>
       <div class="card"><div class="card-hd">Cattle by farm</div><div id="farm-summary"><div class="loading">Loading…</div></div></div>
-      <div class="card"><div class="card-hd">Herds &amp; camps</div><div id="herd-summary"><div class="loading">Loading…</div></div></div>
-      <div class="card"><div class="card-hd">Recent work sessions</div><div id="recent-sessions"><div class="loading">Loading…</div></div></div>
+      <div class="card"><div class="card-hd">Recent activity</div><div id="recent-sessions"><div class="loading">Loading…</div></div></div>
     </div>
 
     <!-- WORK -->
     <div class="screen" id="scr-work"><div id="work-content"></div></div>
+
+    <!-- FARM TAB -->
+    <div class="screen" id="scr-farm">
+      <div class="ftabs" id="farm-tabs">
+        <button class="ftab active" onclick="switchFarmView(this,'Guildford/Browndale')">Guild/Brown</button>
+        <button class="ftab" onclick="switchFarmView(this,'Chilton')">Chilton</button>
+      </div>
+      <div id="farm-view-content"><div class="loading">Loading…</div></div>
+    </div>
 
     <!-- CATTLE -->
     <div class="screen" id="scr-cattle">
@@ -169,6 +230,7 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab active" onclick="switchCattleTab(this,'all')">All</button>
         <button class="ftab" onclick="switchCattleTab(this,'Guildford/Browndale')">Guild/Brown</button>
         <button class="ftab" onclick="switchCattleTab(this,'Chilton')">Chilton</button>
+        <button class="ftab" onclick="switchCattleTab(this,'frank')">Frank's</button>
       </div>
       <div class="card">
         <div class="card-hd"><span>Cattle register</span><button class="add-btn" onclick="openAddCow()">+ Add</button></div>
@@ -184,21 +246,23 @@ button{font-family:inherit;cursor:pointer}
 
     <!-- REPORTS -->
     <div class="screen" id="scr-reports">
-      <div class="card"><div class="card-hd">Calving summary (YTD)</div>
+      <div class="card"><div class="card-hd">Calving (YTD)</div>
         <div class="metrics" style="margin-bottom:0">
-          <div class="metric"><div class="metric-val" id="r-bulls">—</div><div class="metric-lbl">Bull calves</div></div>
+          <div class="metric"><div class="metric-val" id="r-bulls">—</div><div class="metric-lbl">Bulls</div></div>
           <div class="metric"><div class="metric-val" id="r-heifers">—</div><div class="metric-lbl">Heifers</div></div>
-          <div class="metric"><div class="metric-val" id="r-rate">—</div><div class="metric-lbl">Success rate</div></div>
+          <div class="metric"><div class="metric-val" id="r-rate">—</div><div class="metric-lbl">Success</div></div>
         </div>
       </div>
-      <div class="card"><div class="card-hd">Health treatment log</div><div id="health-log"><div class="loading">Loading…</div></div></div>
-      <div class="card"><div class="card-hd">Camp rotation log</div><div id="camp-log"><div class="loading">Loading…</div></div></div>
+      <div class="card"><div class="card-hd">Deaths (YTD)</div><div id="deaths-log"><div class="loading">Loading…</div></div></div>
+      <div class="card"><div class="card-hd">Sales (YTD)</div><div id="sales-log"><div class="loading">Loading…</div></div></div>
+      <div class="card"><div class="card-hd">Health treatments</div><div id="health-log"><div class="loading">Loading…</div></div></div>
     </div>
 
   </div>
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bn-dash" onclick="showScreen('dashboard',this);loadDashboard()"><i class="ti ti-layout-dashboard"></i>Home</button>
-    <button class="bnav-btn" id="bn-work" onclick="showScreen('work',this);startWork()"><i class="ti ti-checklist"></i>Work cattle</button>
+    <button class="bnav-btn" id="bn-work" onclick="showScreen('work',this);startWork()"><i class="ti ti-checklist"></i>Work</button>
+    <button class="bnav-btn" id="bn-farm" onclick="showScreen('farm',this);loadFarmView('Guildford/Browndale')"><i class="ti ti-map-pin"></i>Farm</button>
     <button class="bnav-btn" id="bn-cattle" onclick="showScreen('cattle',this);loadCattle()"><i class="ti ti-cow"></i>Cattle</button>
     <button class="bnav-btn" id="bn-sess" onclick="showScreen('sessions',this);loadSessions()"><i class="ti ti-history"></i>Sessions</button>
     <button class="bnav-btn" id="bn-rep" onclick="showScreen('reports',this);loadReports()"><i class="ti ti-chart-bar"></i>Reports</button>
@@ -218,23 +282,28 @@ var SURL='https://kuyxajkawolcdthghrjh.supabase.co';
 var SKEY='sb_publishable_9X2t0cKe_6ft65cb6bOQAw_aCCPhYCi';
 var AKEY='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';
 var db;
-window.addEventListener('load',function(){ db=supabase.createClient(SURL,SKEY); });
+window.addEventListener('load',function(){db=supabase.createClient(SURL,SKEY);});
+
+var PINS={'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'};
+var pinBuffer='';
 
 var APP={user:null,farmName:null,farmId:null,managerId:null,farms:[],camps:[],cattle:[],cattleFilter:'all'};
 
 var WORK_TYPES=[
-  {l:'Vaccinations',i:'ti-vaccine'},
-  {l:'Redwater block',i:'ti-droplet'},
-  {l:'Spray dip',i:'ti-wash'},
-  {l:'Health treatment',i:'ti-stethoscope'},
-  {l:'Eye treatment',i:'ti-eye'},
-  {l:'Deworming',i:'ti-pill'},
-  {l:'Pregnancy check',i:'ti-baby-carriage'},
-  {l:'Weight recording',i:'ti-scale'},
-  {l:'Calving record',i:'ti-heart'},
-  {l:'Camp rotation',i:'ti-arrows-exchange'},
-  {l:'Herd split',i:'ti-hierarchy-2'},
-  {l:'Other treatment',i:'ti-first-aid-kit'}
+  {l:'Vaccinations',i:'ti-vaccine',cat:'health'},
+  {l:'Redwater block',i:'ti-droplet',cat:'health'},
+  {l:'Spray dip',i:'ti-wash',cat:'health'},
+  {l:'Health treatment',i:'ti-stethoscope',cat:'health'},
+  {l:'Eye treatment',i:'ti-eye',cat:'health'},
+  {l:'Deworming',i:'ti-pill',cat:'health'},
+  {l:'Pregnancy check',i:'ti-baby-carriage',cat:'management'},
+  {l:'Weight recording',i:'ti-scale',cat:'management'},
+  {l:'Calving record',i:'ti-heart',cat:'management'},
+  {l:'Camp rotation',i:'ti-arrows-exchange',cat:'management'},
+  {l:'Herd split',i:'ti-hierarchy-2',cat:'management'},
+  {l:'Sale',i:'ti-currency-dollar',cat:'event'},
+  {l:'Death',i:'ti-skull',cat:'event'},
+  {l:'Other treatment',i:'ti-first-aid-kit',cat:'health'}
 ];
 
 var PRODUCTS={
@@ -244,17 +313,53 @@ var PRODUCTS={
   'Health treatment':['Vitamin B12','Antibiotic (Penstrep)','Antibiotic (Terramycin)','Anti-inflammatory','Dexamethasone','Calcium injection'],
   'Eye treatment':['Terramycin eye ointment','Eyemax spray','Alamycin eye'],
   'Deworming':['Closicare','Dectomax','Ivomec','Cydectin'],
-  'Weight recording':['Weight recorded'],
+  'Sale':['Weaner heifers','Weaner tollies','Cull cows','Bulls'],
+  'Death':['Seneciosis (gifblaar/slangkop)','Asiatic Redwater','Anaplasmosis','Difficult birth','Injury','Predator','Unknown','Sent for testing — result pending'],
   'Other treatment':['Other — see notes']
 };
 
 var BREEDS=['Fenfield Red','Red Angus','South Devon','Brangus','Cross','Unknown'];
 var STATUSES=['Breeding Cow','Heifer','Bull','Calf','Dry cow','Sold','Deceased'];
 
-// ── LOGIN ──────────────────────────────────────────────────────────
-async function doLogin(){
+// ── PIN LOGIN ──────────────────────────────────────────────────────
+function showPinEntry(){
   var name=document.getElementById('login-manager').value;
-  if(!name){alert('Please select your name.');return;}
+  if(!name){document.getElementById('pin-section').classList.add('hidden');return;}
+  pinBuffer='';
+  updatePinDots();
+  document.getElementById('pin-section').classList.remove('hidden');
+  document.getElementById('pin-error').textContent='';
+}
+
+function pinPress(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;
+  updatePinDots();
+  if(pinBuffer.length===4)setTimeout(checkPin,150);
+}
+
+function pinDelete(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
+function pinClear(){pinBuffer='';updatePinDots();}
+
+function updatePinDots(){
+  for(var i=0;i<4;i++){
+    var dot=document.getElementById('pd'+i);
+    if(dot)dot.classList.toggle('filled',i<pinBuffer.length);
+  }
+}
+
+async function checkPin(){
+  var name=document.getElementById('login-manager').value;
+  var correct=PINS[name];
+  if(pinBuffer!==correct){
+    document.getElementById('pin-error').textContent='Incorrect PIN — try again';
+    pinBuffer='';updatePinDots();return;
+  }
+  document.getElementById('pin-error').textContent='';
+  await doLogin(name);
+}
+
+async function doLogin(name){
   try{
     var r1=await db.from('farms').select('*');
     var r2=await db.from('managers').select('*');
@@ -263,21 +368,25 @@ async function doLogin(){
     var mgrs=r2.data||[];
     var mgr=mgrs.find(function(m){return m.name===name;});
     APP.user=name; APP.managerId=mgr?mgr.id:null;
-    if(name==='Owner'){APP.farmName='All farms';APP.farmId=null;}
-    else if(mgr){var farm=APP.farms.find(function(f){return f.id===mgr.farm_id;});APP.farmName=farm?farm.name:'Unknown';APP.farmId=mgr.farm_id;}
+    // Browns and Jarmans see all farms
+    if(name==='Browns'||name==='Jarmans'){APP.farmName='All farms';APP.farmId=null;}
+    else if(mgr){var farm=APP.farms.find(function(f){return f.id===mgr.farm_id;});APP.farmName=farm?farm.name:'All farms';APP.farmId=mgr?mgr.farm_id:null;}
+    else{APP.farmName='All farms';APP.farmId=null;}
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     document.getElementById('tb-name').textContent=name;
     document.getElementById('tb-farm').textContent=APP.farmName;
-    loadDashboard();
+    loadCattle().then(function(){loadDashboard();});
   }catch(e){alert('Connection error: '+e.message);}
 }
 
 function doLogout(){
   APP={user:null,farmName:null,farmId:null,managerId:null,farms:[],camps:[],cattle:[],cattleFilter:'all'};
+  pinBuffer=''; updatePinDots();
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-manager').value='';
+  document.getElementById('pin-section').classList.add('hidden');
   document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('bn-dash').classList.add('active');
 }
@@ -293,43 +402,141 @@ function showScreen(name,btn){
 async function loadDashboard(){
   try{
     var year=new Date().getFullYear();
-    var rc=await db.from('cattle').select('id,farm_id,camp_id',{count:'exact'}).eq('active',true);
-    var rs=await db.from('work_sessions').select('id',{count:'exact'});
+    var rc=await db.from('cattle').select('id,farm_id,tag',{count:'exact'}).eq('active',true);
+    var allCattle=rc.data||[];
+    var rs=await db.from('work_sessions').select('id',{count:'exact'}).neq('status','cancelled');
     var rv=await db.from('calving_records').select('id',{count:'exact'}).gte('birth_date',year+'-01-01');
+    var rd=await db.from('cattle').select('id',{count:'exact'}).eq('status','Deceased').gte('updated_at',year+'-01-01');
+    var rsl=await db.from('cattle').select('id',{count:'exact'}).eq('status','Sold').gte('updated_at',year+'-01-01');
     document.getElementById('d-total').textContent=rc.count||0;
     document.getElementById('d-sessions').textContent=rs.count||0;
     document.getElementById('d-calves').textContent=rv.count||0;
-    var cattle=rc.data||[];
+    document.getElementById('d-deaths').textContent=rd.count||0;
+    document.getElementById('d-sales').textContent=rsl.count||0;
+    // frank's cattle count
+    var frankCount=allCattle.filter(function(c){return /F\d*$/.test(c.tag)||c.tag.includes('F');}).length;
+    document.getElementById('d-frank').textContent=frankCount;
     // farm summary
     var fs=document.getElementById('farm-summary');
     fs.innerHTML=APP.farms.map(function(f){
-      var n=cattle.filter(function(c){return c.farm_id===f.id;}).length;
+      var n=allCattle.filter(function(c){return c.farm_id===f.id;}).length;
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:var(--border);font-size:13px"><span style="font-weight:500">'+f.name+'</span><span class="badge badge-green">'+n+' cattle</span></div>';
     }).join('');
-    // herd/camp summary
-    var hs=document.getElementById('herd-summary');
-    var campCounts={};
-    cattle.forEach(function(c){if(c.camp_id){campCounts[c.camp_id]=(campCounts[c.camp_id]||0)+1;}});
-    var campRows=APP.camps.filter(function(c){return campCounts[c.id]>0;}).map(function(c){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:var(--border);font-size:12px"><span>'+(c.farms?c.farms.name+' — ':'')+c.name+'</span><span class="badge badge-gray">'+campCounts[c.id]+'</span></div>';
-    }).join('');
-    hs.innerHTML=campRows||'<div class="empty-state">No cattle assigned to camps yet</div>';
-    // sessions
-    var rss=await db.from('work_sessions').select('*,farms(name),managers(name)').order('session_date',{ascending:false}).limit(5);
+    // recent sessions
+    var rss=await db.from('work_sessions').select('*,farms(name),managers(name)').order('session_date',{ascending:false}).limit(6);
     var sess=rss.data||[];
     var el=document.getElementById('recent-sessions');
     el.innerHTML=sess.length?sess.map(function(s){
-      return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px"><div style="font-weight:500">'+(s.work_type||'')+'</div><div style="color:var(--text2);margin-top:2px">'+(s.session_date||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div></div>';
-    }).join(''):'<div class="empty-state">No sessions recorded yet</div>';
+      var cancelled=s.status==='cancelled';
+      return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px;opacity:'+(cancelled?.5:1)+'">'+
+        '<div style="font-weight:500">'+(s.work_type||'')+(cancelled?' <span class="badge badge-gray">Cancelled</span>':'')+'</div>'+
+        '<div style="color:var(--text2);margin-top:2px">'+(s.session_date||'')+' &middot; '+((s.farms&&s.farms.name)||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div></div>';
+    }).join(''):'<div class="empty-state">No sessions yet</div>';
   }catch(e){console.error(e);}
+}
+
+// ── FARM VIEW ──────────────────────────────────────────────────────
+var currentFarmView='Guildford/Browndale';
+
+function switchFarmView(btn,farmName){
+  document.querySelectorAll('#farm-tabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  loadFarmView(farmName);
+}
+
+async function loadFarmView(farmName){
+  currentFarmView=farmName;
+  var el=document.getElementById('farm-view-content');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  var farm=APP.farms.find(function(f){return f.name===farmName;});
+  if(!farm){el.innerHTML='<div class="empty-state">Farm not found</div>';return;}
+  var farmCamps=APP.camps.filter(function(c){return c.farm_id===farm.id;});
+  // get cattle counts per camp
+  var rc=await db.from('cattle').select('id,camp_id,tag').eq('farm_id',farm.id).eq('active',true);
+  var cattle=rc.data||[];
+  var campCounts={};
+  cattle.forEach(function(c){if(c.camp_id){campCounts[c.camp_id]=(campCounts[c.camp_id]||0)+1;}});
+  // get last session per camp
+  var rs=await db.from('work_sessions').select('*,session_cattle(cattle_id,cattle(camp_id))').eq('farm_id',farm.id).order('session_date',{ascending:false}).limit(100);
+  var sessions=rs.data||[];
+  var h='<div class="camp-grid">';
+  farmCamps.forEach(function(camp){
+    var count=campCounts[camp.id]||0;
+    var occupied=count>0;
+    // find last session that included cattle in this camp
+    var lastUsed='Never';
+    for(var i=0;i<sessions.length;i++){
+      var s=sessions[i];
+      if(s.session_cattle&&s.session_cattle.some(function(sc){return sc.cattle&&sc.cattle.camp_id===camp.id;})){
+        lastUsed=s.session_date; break;
+      }
+    }
+    h+='<div class="camp-card '+(occupied?'occupied':'empty')+'" onclick="openCampDetail(\''+camp.id+'\',\''+camp.name.replace(/'/g,"\\'")+'\')">';
+    h+='<div class="camp-card-name">'+camp.name+'</div>';
+    h+='<div class="camp-card-count">'+(occupied?count:'—')+'</div>';
+    h+='<div class="camp-card-lbl">'+(occupied?'cattle':'empty')+'</div>';
+    h+='<div style="font-size:10px;color:var(--text3);margin-top:4px">Last: '+lastUsed+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+async function openCampDetail(campId,campName){
+  openModal(campName,'<div class="loading">Loading camp data…</div>');
+  var rc=await db.from('cattle').select('*,farms(name)').eq('camp_id',campId).eq('active',true).order('tag');
+  var cattle=rc.data||[];
+  // get sessions that involved cattle in this camp
+  var rs=await db.from('work_sessions').select('*,managers(name),session_cattle(cattle_id)').order('session_date',{ascending:false}).limit(200);
+  var sessions=rs.data||[];
+  var cattleIds=cattle.map(function(c){return c.id;});
+  var campSessions=sessions.filter(function(s){
+    return s.session_cattle&&s.session_cattle.some(function(sc){return cattleIds.includes(sc.cattle_id);});
+  }).slice(0,5);
+  var h='<div style="font-size:13px;color:var(--text2);margin-bottom:12px">'+cattle.length+' cattle currently in this camp</div>';
+  if(campSessions.length){
+    h+='<div class="sec-lbl">Recent sessions</div>';
+    h+=campSessions.map(function(s){return '<div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div><strong>'+(s.work_type||'')+'</strong><div style="color:var(--text2)">'+(s.session_date||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div></div></div>';}).join('');
+  }
+  h+='<div class="sec-lbl">Cattle in camp ('+cattle.length+')</div>';
+  if(cattle.length){
+    h+='<div style="max-height:250px;overflow-y:auto;border:var(--border);border-radius:8px">';
+    h+=cattle.map(function(c){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:var(--border);font-size:12px"><span style="font-weight:500">'+c.tag+'</span><span style="color:var(--text2)">'+(c.breed||'—')+'</span></div>';}).join('');
+    h+='</div>';
+  } else {
+    h+='<div class="empty-state">No cattle in this camp</div>';
+  }
+  // move all cattle button
+  if(cattle.length){
+    var farmCamps=APP.camps.filter(function(c){return c.id!==campId;});
+    h+='<div class="sec-lbl">Move all cattle to</div>';
+    h+='<select id="move-all-camp" style="width:100%;padding:8px;border:var(--border);border-radius:8px;font-size:13px;margin-bottom:8px">'+
+      farmCamps.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('')+'</select>';
+    h+='<button class="btn-full" onclick="moveAllFromCamp(\''+campId+'\')">Move all cattle</button>';
+  }
+  document.getElementById('modal-body').innerHTML=h;
+}
+
+async function moveAllFromCamp(fromCampId){
+  var toCampId=document.getElementById('move-all-camp').value;
+  if(!toCampId){alert('Please select a camp.');return;}
+  var today=new Date().toISOString().split('T')[0];
+  var rc=await db.from('cattle').select('id').eq('camp_id',fromCampId).eq('active',true);
+  var ids=(rc.data||[]).map(function(c){return c.id;});
+  if(!ids.length){alert('No cattle to move.');return;}
+  await db.from('camp_moves').insert(ids.map(function(id){return{cattle_id:id,from_camp_id:fromCampId,to_camp_id:toCampId,move_date:today,moved_by:APP.managerId};}));
+  await db.from('cattle').update({camp_id:toCampId}).in('id',ids);
+  closeModal();
+  loadFarmView(currentFarmView);
+  loadCattle();
+  alert(ids.length+' cattle moved.');
 }
 
 // ── CATTLE ─────────────────────────────────────────────────────────
 async function loadCattle(){
-  document.getElementById('cattle-tbody').innerHTML='<tr><td colspan="4" class="loading">Loading…</td></tr>';
   var r=await db.from('cattle').select('*,farms(name),camps(name)').eq('active',true).order('tag');
   APP.cattle=r.data||[];
-  renderCattleTable();
+  if(document.getElementById('scr-cattle').classList.contains('active'))renderCattleTable();
 }
 
 function switchCattleTab(btn,farm){
@@ -341,13 +548,19 @@ function renderCattleTable(){
   var q=(document.getElementById('cattle-search')||{}).value||'';
   q=q.toLowerCase();
   var list=APP.cattle.filter(function(c){
-    var mf=APP.cattleFilter==='all'||(c.farms&&c.farms.name===APP.cattleFilter);
+    var isFrank=/F\d*$/.test(c.tag)||c.tag.includes('-F');
+    var mf=APP.cattleFilter==='all'||(APP.cattleFilter==='frank'&&isFrank)||(APP.cattleFilter!=='frank'&&c.farms&&c.farms.name===APP.cattleFilter);
     var mq=!q||c.tag.toLowerCase().includes(q)||(c.breed||'').toLowerCase().includes(q)||((c.camps&&c.camps.name)||'').toLowerCase().includes(q);
     return mf&&mq;
   });
   var tb=document.getElementById('cattle-tbody');
   tb.innerHTML=list.length?list.map(function(c){
-    return '<tr onclick="openCowProfile(\''+c.id+'\')" style="cursor:pointer"><td style="font-weight:600">'+c.tag+'</td><td style="font-size:11px;color:var(--text2)">'+(c.breed||'—')+'</td><td style="font-size:11px;color:var(--text2)">'+((c.camps&&c.camps.name)||'—')+'</td><td><span class="badge badge-green" style="font-size:10px">'+(c.status||'—')+'</span></td></tr>';
+    var isFrank=/F/.test(c.tag);
+    return '<tr onclick="openCowProfile(\''+c.id+'\')" style="cursor:pointer">'+
+      '<td style="font-weight:600">'+c.tag+(isFrank?'<span class="badge badge-blue" style="margin-left:4px;font-size:9px">F</span>':'')+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+(c.breed||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+((c.camps&&c.camps.name)||'—')+'</td>'+
+      '<td><span class="badge badge-green" style="font-size:10px">'+(c.status||'—')+'</span></td></tr>';
   }).join(''):'<tr><td colspan="4" class="empty-state">No cattle found</td></tr>';
 }
 
@@ -360,18 +573,18 @@ async function openCowProfile(id){
   var r2=await db.from('health_logs').select('*').eq('cattle_id',id).order('treatment_date',{ascending:false}).limit(20);
   var r3=await db.from('camp_moves').select('*,from_camp:from_camp_id(name),to_camp:to_camp_id(name)').eq('cattle_id',id).order('move_date',{ascending:false});
   var calves=r1.data||[]; var logs=r2.data||[]; var moves=r3.data||[];
+  var isFrank=/F/.test(cow.tag);
   document.getElementById('modal-title').textContent='Cow: '+cow.tag;
-  var h='<div class="profile-hd"><div class="profile-avatar"><i class="ti ti-cow" style="color:var(--green);font-size:22px"></i></div><div>';
-  h+='<div style="font-size:18px;font-weight:700">'+cow.tag+'</div>';
+  var h='<div class="profile-hd"><div class="profile-avatar" style="background:'+(isFrank?'var(--blue-light)':'var(--green-light)')+'"><i class="ti ti-cow" style="color:'+(isFrank?'var(--blue)':'var(--green)')+';font-size:22px"></i></div><div>';
+  h+='<div style="font-size:18px;font-weight:700">'+cow.tag+(isFrank?' <span class="badge badge-blue">Frank\'s</span>':'')+'</div>';
   h+='<div style="font-size:13px;color:var(--text2)">'+(cow.breed||'—')+' &middot; '+((cow.farms&&cow.farms.name)||'')+'</div>';
   h+='<div style="font-size:12px;color:var(--text2)">'+((cow.camps&&cow.camps.name)||'No camp assigned')+'</div>';
   h+='<div style="margin-top:6px"><span class="badge badge-green">'+(cow.status||'—')+'</span>'+(cow.birth_year?'<span class="badge badge-gray" style="margin-left:4px">Born '+cow.birth_year+'</span>':'')+'</div></div></div>';
-  if(cow.dam_tag)h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Dam: <strong>'+cow.dam_tag+'</strong></div>';
+  if(cow.dam_tag)h+='<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Dam: <strong>'+cow.dam_tag+'</strong></div>';
   if(cow.notes)h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">'+cow.notes+'</div>';
-  // edit camp button
   h+='<button onclick="openMoveCow(\''+cow.id+'\',\''+cow.tag+'\')" style="width:100%;padding:8px;background:var(--green-light);color:var(--green);border:none;border-radius:8px;font-size:13px;font-weight:500;margin-bottom:12px"><i class="ti ti-arrows-exchange"></i> Move to different camp</button>';
   h+='<div class="sec-lbl">Offspring ('+calves.length+')</div>';
-  h+=calves.length?calves.map(function(c){return '<div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div><strong>'+((c.calf&&c.calf.tag)||'—')+'</strong><span class="badge '+(c.gender==='Bull'?'badge-blue':'badge-amber')+'" style="margin-left:4px">'+(c.gender||'—')+'</span><span class="badge '+(c.outcome==='Alive'?'badge-green':'badge-red')+'" style="margin-left:4px">'+(c.outcome||'')+'</span><div style="color:var(--text2);margin-top:2px">'+(c.birth_date||'')+(c.birth_weight_kg?' &middot; '+c.birth_weight_kg+'kg':'')+'</div></div></div>';}).join(''):'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No recorded offspring</div>';
+  h+=calves.length?calves.map(function(c){return '<div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div><div><strong>'+((c.calf&&c.calf.tag)||'—')+'</strong> <span class="badge '+(c.gender==='Bull'?'badge-blue':'badge-amber')+'">'+(c.gender||'—')+'</span> <span class="badge '+(c.outcome==='Alive'?'badge-green':'badge-red')+'">'+(c.outcome||'')+'</span><div style="color:var(--text2)">'+(c.birth_date||'')+(c.birth_weight_kg?' &middot; '+c.birth_weight_kg+'kg':'')+'</div></div></div>';}).join(''):'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No recorded offspring</div>';
   h+='<div class="sec-lbl">Health history ('+logs.length+')</div>';
   h+=logs.length?logs.map(function(l){return '<div class="tl-item"><div class="tl-dot" style="background:var(--blue)"></div><div><strong>'+l.treatment+'</strong><div style="color:var(--text2)">'+(l.treatment_date||'')+'</div></div></div>';}).join(''):'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No recorded treatments</div>';
   h+='<div class="sec-lbl">Camp moves ('+moves.length+')</div>';
@@ -379,32 +592,26 @@ async function openCowProfile(id){
   document.getElementById('modal-body').innerHTML=h;
 }
 
-// ── MOVE SINGLE COW ────────────────────────────────────────────────
 function openMoveCow(cowId,tag){
   var campOpts=APP.camps.map(function(c){return '<option value="'+c.id+'">'+(c.farms?c.farms.name+' — ':'')+c.name+'</option>';}).join('');
-  openModal('Move '+tag,
-    '<div class="fg"><label>Move to camp</label><select id="move-camp">'+campOpts+'</select></div>'+
-    '<button class="btn-full" onclick="saveMoveCow(\''+cowId+'\',\''+tag+'\')">Save move</button>'
-  );
+  openModal('Move '+tag,'<div class="fg"><label>Move to camp</label><select id="move-camp">'+campOpts+'</select></div><button class="btn-full" onclick="saveMoveCow(\''+cowId+'\',\''+tag+'\')">Save move</button>');
 }
 
 async function saveMoveCow(cowId,tag){
   var newCampId=document.getElementById('move-camp').value;
   var today=new Date().toISOString().split('T')[0];
   var r=await db.from('cattle').select('camp_id').eq('id',cowId).single();
-  var oldCampId=r.data?r.data.camp_id:null;
-  await db.from('camp_moves').insert({cattle_id:cowId,from_camp_id:oldCampId,to_camp_id:newCampId,move_date:today,moved_by:APP.managerId});
+  await db.from('camp_moves').insert({cattle_id:cowId,from_camp_id:r.data?r.data.camp_id:null,to_camp_id:newCampId,move_date:today,moved_by:APP.managerId});
   await db.from('cattle').update({camp_id:newCampId}).eq('id',cowId);
   closeModal(); loadCattle(); loadDashboard();
   alert(tag+' moved successfully.');
 }
 
-// ── ADD COW ────────────────────────────────────────────────────────
 function openAddCow(){
   var farmOpts=APP.farms.map(function(f){return '<option value="'+f.id+'">'+f.name+'</option>';}).join('');
   var campOpts=APP.camps.map(function(c){return '<option value="'+c.id+'">'+(c.farms?c.farms.name+' — ':'')+c.name+'</option>';}).join('');
   openModal('Add new animal',
-    '<div class="fg"><label>Tag number *</label><input id="ac-tag" placeholder="e.g. 24-001"></div>'+
+    '<div class="fg"><label>Tag number *</label><input id="ac-tag" placeholder="e.g. 24-001 or 19-21F4"></div>'+
     '<div class="fg"><label>Breed</label><select id="ac-breed">'+BREEDS.map(function(b){return '<option>'+b+'</option>';}).join('')+'</select></div>'+
     '<div class="fg"><label>Farm</label><select id="ac-farm">'+farmOpts+'</select></div>'+
     '<div class="fg"><label>Camp</label><select id="ac-camp"><option value="">— Not assigned —</option>'+campOpts+'</select></div>'+
@@ -426,11 +633,13 @@ async function saveAddCow(){
   closeModal(); loadCattle(); loadDashboard();
 }
 
-// ── WORK SESSION WIZARD ────────────────────────────────────────────
+// ── WORK SESSION ───────────────────────────────────────────────────
 var WS={};
 
 function startWork(){
-  WS={step:1,farmId:APP.farmId,farmName:APP.farmName,workTypes:[],treatmentDetails:{},selectedCattle:[],tagInput:'',notes:''};
+  // make sure cattle are loaded
+  if(!APP.cattle.length){loadCattle().then(function(){WS={step:1,farmId:APP.farmId,farmName:APP.farmName,workTypes:[],treatmentDetails:{},selectedCattle:[],notes:''};renderStep();});return;}
+  WS={step:1,farmId:APP.farmId,farmName:APP.farmName,workTypes:[],treatmentDetails:{},selectedCattle:[],notes:''};
   renderStep();
 }
 
@@ -446,90 +655,98 @@ function renderStep(){
     h+='</div><div class="nav-row"><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===2){
-    h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select all work types for this session — you can select multiple</div>';
-    h+='<div class="option-grid">';
-    WORK_TYPES.forEach(function(t){
-      var sel=WS.workTypes.includes(t.l);
-      h+='<div class="opt-btn'+(sel?' sel':'')+'" onclick="wsToggleType(\''+t.l+'\',this)"><i class="ti '+t.i+'"></i>'+t.l+'</div>';
+    h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select all work types — you can choose multiple</div>';
+    // group by category
+    var cats={health:'Health treatments',management:'Herd management',event:'Events'};
+    Object.keys(cats).forEach(function(cat){
+      h+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin:10px 0 6px">'+cats[cat]+'</div>';
+      h+='<div class="option-grid">';
+      WORK_TYPES.filter(function(t){return t.cat===cat;}).forEach(function(t){
+        var sel=WS.workTypes.includes(t.l);
+        var isRed=cat==='event'&&t.l==='Death';
+        h+='<div class="opt-btn'+(sel?(isRed?' red-sel':' sel'):'')+'" onclick="wsToggleType(\''+t.l+'\',this)"><i class="ti '+t.i+'"></i>'+t.l+'</div>';
+      });
+      h+='</div>';
     });
-    h+='</div><div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
+    h+='<div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===3){
-    // For each selected work type, show product selection
-    var needsProducts=['Vaccinations','Redwater block','Spray dip','Health treatment','Eye treatment','Deworming','Other treatment'];
     var specialTypes=['Calving record','Camp rotation','Herd split','Weight recording','Pregnancy check'];
     WS.workTypes.forEach(function(wt){
-      h+='<div class="treatment-block"><div class="treatment-block-title"><i class="ti ti-chevron-right"></i> '+wt+'</div>';
-      if(specialTypes.includes(wt)){
-        if(wt==='Calving record'){
-          h+='<div class="fg"><label>Dam tag (mother)</label><input id="cv-dam" placeholder="e.g. 19-001" value="'+(WS._calving&&WS._calving.damTag||'')+'"></div>'+
-            '<div class="fg"><label>Calf tag</label><input id="cv-calf" placeholder="e.g. 24-055" value="'+(WS._calving&&WS._calving.calfTag||'')+'"></div>'+
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-            '<div class="fg"><label>Gender</label><select id="cv-gender"><option>Bull</option><option>Heifer</option></select></div>'+
-            '<div class="fg"><label>Outcome</label><select id="cv-outcome"><option>Alive</option><option>Died</option><option>Stillborn</option></select></div></div>'+
-            '<div class="fg"><label>Birth weight (kg)</label><input id="cv-weight" type="number" placeholder="optional"></div>'+
-            '<div class="fg"><label>Birth date</label><input id="cv-date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>';
-        } else if(wt==='Camp rotation'||wt==='Herd split'){
-          var fc=APP.camps.filter(function(c){return c.farm_id===WS.farmId;});
-          var opts=fc.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
-          h+='<div class="fg"><label>Move FROM camp</label><select id="rot-from">'+opts+'</select></div>'+
-            '<div class="fg"><label>Move TO camp</label><select id="rot-to">'+opts+'</select></div>';
-          if(wt==='Herd split')h+='<div style="font-size:12px;color:var(--text2);background:var(--blue-light);padding:8px;border-radius:6px">Select the individual cattle to move in the next step</div>';
-        }
-      } else if(needsProducts.includes(wt)){
-        var prods=PRODUCTS[wt]||[];
-        var sel=WS.treatmentDetails[wt]||[];
-        h+='<div class="pill-group">';
-        prods.forEach(function(p){h+='<div class="pill'+(sel.includes(p)?' sel':'')+'" onclick="wsToggleProd(\''+wt+'\',\''+p+'\',this)">'+p+'</div>';});
+      h+='<div class="treatment-block"><div class="treatment-block-title"><i class="ti ti-chevron-right"></i>'+wt+'</div>';
+      if(wt==='Calving record'){
+        h+='<div class="fg"><label>Dam tag (mother)</label><input id="cv-dam" placeholder="e.g. 19-001"></div>'+
+          '<div class="fg"><label>Calf tag</label><input id="cv-calf" placeholder="e.g. 24-055"></div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<div class="fg"><label>Gender</label><select id="cv-gender"><option>Bull</option><option>Heifer</option></select></div>'+
+          '<div class="fg"><label>Outcome</label><select id="cv-outcome"><option>Alive</option><option>Died</option><option>Stillborn</option></select></div></div>'+
+          '<div class="fg"><label>Birth weight (kg)</label><input id="cv-weight" type="number" placeholder="optional"></div>'+
+          '<div class="fg"><label>Birth date</label><input id="cv-date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>';
+      } else if(wt==='Camp rotation'||wt==='Herd split'){
+        var fc=APP.camps.filter(function(c){return c.farm_id===WS.farmId;});
+        var opts=fc.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+        h+='<div class="fg"><label>Move FROM camp</label><select id="rot-from">'+opts+'</select></div>'+
+          '<div class="fg"><label>Move TO camp</label><select id="rot-to">'+opts+'</select></div>';
+      } else if(wt==='Death'){
+        h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Select cause of death</div>'+
+          '<div class="pill-group">';
+        (PRODUCTS['Death']||[]).forEach(function(p){
+          var sel=(WS.treatmentDetails['Death']||[]).includes(p);
+          h+='<div class="pill'+(sel?' sel':'')+'" onclick="wsToggleProd(\'Death\',\''+p.replace(/'/g,"\\'")  +'\',this)">'+p+'</div>';
+        });
         h+='</div>'+
-          '<div class="fg"><label>Other / custom product</label><input id="custom-'+wt.replace(/\s/g,'-')+'" placeholder="Type product name if not listed" value="'+(WS.customProds&&WS.customProds[wt]||'')+'"></div>';
+          '<div class="fg"><label>Camp where death occurred</label><select id="death-camp">'+
+          APP.camps.filter(function(c){return c.farm_id===WS.farmId;}).map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('')+
+          '</select></div>'+
+          '<div class="fg"><label>Notes / ear tag sent for testing?</label><input id="death-notes" placeholder="Any additional details"></div>';
+      } else if(wt==='Sale'){
+        h+='<div class="fg"><label>Type of sale</label><div class="pill-group">';
+        (PRODUCTS['Sale']||[]).forEach(function(p){
+          var sel=(WS.treatmentDetails['Sale']||[]).includes(p);
+          h+='<div class="pill'+(sel?' sel':'')+'" onclick="wsToggleProd(\'Sale\',\''+p+'\',this)">'+p+'</div>';
+        });
+        h+='</div></div>'+
+          '<div class="fg"><label>Buyer name</label><input id="sale-buyer" placeholder="e.g. Kanhym Feedlot"></div>'+
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<div class="fg"><label>Price/kg (heifers)</label><input id="sale-heifer-price" type="number" placeholder="R/kg"></div>'+
+          '<div class="fg"><label>Price/kg (tollies)</label><input id="sale-tolly-price" type="number" placeholder="R/kg"></div></div>'+
+          '<div class="fg"><label>Notes</label><input id="sale-notes" placeholder="optional"></div>';
+      } else if(!specialTypes.includes(wt)){
+        var prods=PRODUCTS[wt]||[];
+        var sel2=WS.treatmentDetails[wt]||[];
+        h+='<div class="pill-group">';
+        prods.forEach(function(p){h+='<div class="pill'+(sel2.includes(p)?' sel':'')+'" onclick="wsToggleProd(\''+wt+'\',\''+p+'\',this)">'+p+'</div>';});
+        h+='</div>'+
+          '<div class="fg"><label>Other / custom product</label><input id="custom-'+wt.replace(/\s/g,'-')+'" placeholder="Type product if not listed"></div>';
       }
       h+='</div>';
     });
     h+='<div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===4){
-    var isCalving=WS.workTypes.includes('Calving record');
-    var isRotation=WS.workTypes.includes('Camp rotation')||WS.workTypes.includes('Herd split');
-    if(isCalving&&!WS.workTypes.some(function(t){return!['Calving record'].includes(t);})){
-      h+='<div style="background:var(--green-light);color:var(--green);border-radius:8px;padding:12px;font-size:13px;text-align:center;margin-bottom:12px"><i class="ti ti-check"></i> Calving details recorded</div>';
-    } else {
-      // cattle selection
-      h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select cattle worked in this session. Tap to select/deselect.</div>';
-      // search
-      h+='<input class="search-input" id="ws-cattle-search" placeholder="Search tag…" oninput="wsFilterCattle()" style="margin-bottom:8px">';
-      // photo options
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
-        '<div class="photo-btn" onclick="document.getElementById(\'ph-camera\').click()"><i class="ti ti-camera"></i>Take photo<input type="file" id="ph-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)"></div>'+
-        '<div class="photo-btn" onclick="document.getElementById(\'ph-gallery\').click()"><i class="ti ti-photo"></i>From gallery<input type="file" id="ph-gallery" accept="image/*" style="display:none" onchange="handlePhoto(event)"></div>'+
-        '</div>';
-      if(WS._photoStatus)h+='<div style="background:var(--blue-light);color:var(--blue);padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px">'+WS._photoStatus+'</div>';
-      // cattle list
-      var farmCattle=APP.cattle.filter(function(c){return c.farm_id===WS.farmId;});
-      h+='<div id="ws-cattle-list" style="max-height:320px;overflow-y:auto;border:var(--border);border-radius:8px">';
-      h+=farmCattle.map(function(c){
-        var sel=WS.selectedCattle.includes(c.id);
-        return '<div class="cattle-select-item'+(sel?' selected':'')+'" onclick="wsToggleCow(\''+c.id+'\')">'+
-          '<div class="cattle-checkbox'+(sel?' checked':'')+'">'+( sel?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':'' )+'</div>'+
-          '<div><div style="font-weight:600">'+c.tag+'</div><div style="font-size:11px;color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</div></div>'+
-          '</div>';
-      }).join('');
-      h+='</div>';
-      h+='<div style="font-size:12px;color:var(--green);margin-top:8px;font-weight:500">'+WS.selectedCattle.length+' cattle selected</div>';
-    }
+    var farmCattle=APP.cattle.filter(function(c){return c.farm_id===WS.farmId;});
+    h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Tap cattle to select. '+(WS.selectedCattle.length)+' selected.</div>';
+    h+='<input class="search-input" id="ws-cattle-search" placeholder="Search tag…" oninput="wsFilterCattle()" style="margin-bottom:8px">';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<div class="photo-btn" onclick="document.getElementById(\'ph-cam\').click()"><i class="ti ti-camera"></i>Camera<input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)"></div>'+
+      '<div class="photo-btn" onclick="document.getElementById(\'ph-gal\').click()"><i class="ti ti-photo"></i>Gallery<input type="file" id="ph-gal" accept="image/*" style="display:none" onchange="handlePhoto(event)"></div></div>';
+    if(WS._photoStatus)h+='<div style="background:var(--blue-light);color:var(--blue);padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px">'+WS._photoStatus+'</div>';
+    h+='<div id="ws-cattle-list" style="max-height:300px;overflow-y:auto;border:var(--border);border-radius:8px">';
+    if(!farmCattle.length){h+='<div class="empty-state">No cattle found for this farm</div>';}
+    else{h+=farmCattle.map(function(c){var sel=WS.selectedCattle.includes(c.id);return '<div class="cattle-select-item'+(sel?' selected':'')+'" id="ci-'+c.id+'" onclick="wsToggleCow(\''+c.id+'\')">'+'<div class="cattle-checkbox'+(sel?' checked':'')+'">'+( sel?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':'' )+'</div>'+'<div><div style="font-weight:600">'+c.tag+'</div><div style="font-size:11px;color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</div></div></div>';}).join('');}
+    h+='</div>';
+    h+='<div id="ws-sel-count" style="font-size:12px;color:var(--green);margin-top:8px;font-weight:500">'+WS.selectedCattle.length+' cattle selected</div>';
     h+='<div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===5){
-    h+='<div class="card" style="margin-bottom:12px">';
-    h+='<div style="font-size:12px;color:var(--text2)">Farm</div><div style="font-weight:600;margin-bottom:10px">'+WS.farmName+'</div>';
-    h+='<div style="font-size:12px;color:var(--text2)">Work types</div><div style="margin-bottom:10px">'+WS.workTypes.map(function(t){return '<span class="badge badge-blue" style="margin:2px">'+t+'</span>';}).join('')+'</div>';
-    Object.keys(WS.treatmentDetails).forEach(function(wt){
-      if(WS.treatmentDetails[wt].length){
-        h+='<div style="font-size:12px;color:var(--text2)">'+wt+'</div><div style="margin-bottom:8px">'+WS.treatmentDetails[wt].map(function(p){return '<span class="badge badge-green" style="margin:2px">'+p+'</span>';}).join('')+'</div>';
-      }
-    });
-    h+='<div style="font-size:12px;color:var(--text2)">Cattle</div><div style="font-weight:600">'+WS.selectedCattle.length+' head selected</div></div>';
-    h+='<div class="fg"><label>Notes (optional)</label><textarea id="ws-notes" rows="3" placeholder="Any observations, issues, or extra details…"></textarea></div>';
+    var allProds=[];
+    Object.values(WS.treatmentDetails).forEach(function(prods){prods.forEach(function(p){if(!allProds.includes(p))allProds.push(p);});});
+    h+='<div class="card" style="margin-bottom:12px">'+
+      '<div style="font-size:12px;color:var(--text2)">Farm</div><div style="font-weight:600;margin-bottom:10px">'+WS.farmName+'</div>'+
+      '<div style="font-size:12px;color:var(--text2)">Work types</div><div style="margin-bottom:10px">'+WS.workTypes.map(function(t){return '<span class="badge badge-blue" style="margin:2px">'+t+'</span>';}).join('')+'</div>'+
+      (allProds.length?'<div style="font-size:12px;color:var(--text2);margin-bottom:4px">Products / treatments</div><div style="margin-bottom:10px">'+allProds.map(function(p){return '<span class="badge badge-green" style="margin:2px">'+p+'</span>';}).join('')+'</div>':'')+
+      '<div style="font-size:12px;color:var(--text2)">Cattle</div><div style="font-weight:600">'+WS.selectedCattle.length+' head selected</div></div>';
+    h+='<div class="fg"><label>Notes (optional)</label><textarea id="ws-notes" rows="3" placeholder="Any observations or extra details…"></textarea></div>';
     h+='<div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsSave()">&#x2713; Save session</button></div>';
   }
 
@@ -537,36 +754,21 @@ function renderStep(){
 }
 
 function wsSetFarm(id,name,el){WS.farmId=id;WS.farmName=name;el.closest('.option-grid').querySelectorAll('.opt-btn').forEach(function(b){b.classList.remove('sel');});el.classList.add('sel');}
-
-function wsToggleType(t,el){
-  var i=WS.workTypes.indexOf(t);
-  if(i>-1){WS.workTypes.splice(i,1);el.classList.remove('sel');}
-  else{WS.workTypes.push(t);el.classList.add('sel');}
-}
-
-function wsToggleProd(wt,p,el){
-  if(!WS.treatmentDetails[wt])WS.treatmentDetails[wt]=[];
-  var i=WS.treatmentDetails[wt].indexOf(p);
-  if(i>-1){WS.treatmentDetails[wt].splice(i,1);el.classList.remove('sel');}
-  else{WS.treatmentDetails[wt].push(p);el.classList.add('sel');}
-}
+function wsToggleType(t,el){var i=WS.workTypes.indexOf(t);if(i>-1){WS.workTypes.splice(i,1);el.classList.remove('sel');el.classList.remove('red-sel');}else{WS.workTypes.push(t);el.classList.add(t==='Death'?'red-sel':'sel');}}
+function wsToggleProd(wt,p,el){if(!WS.treatmentDetails[wt])WS.treatmentDetails[wt]=[];var i=WS.treatmentDetails[wt].indexOf(p);if(i>-1){WS.treatmentDetails[wt].splice(i,1);el.classList.remove('sel');}else{WS.treatmentDetails[wt].push(p);el.classList.add('sel');}}
 
 function wsToggleCow(id){
   var i=WS.selectedCattle.indexOf(id);
-  if(i>-1){WS.selectedCattle.splice(i,1);}
-  else{WS.selectedCattle.push(id);}
-  var item=document.querySelector('.cattle-select-item[onclick*="\''+id+'\'"]');
-  var cb=item&&item.querySelector('.cattle-checkbox');
-  if(item){item.classList.toggle('selected',WS.selectedCattle.includes(id));}
-  if(cb){cb.classList.toggle('checked',WS.selectedCattle.includes(id));cb.innerHTML=WS.selectedCattle.includes(id)?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':'';}
-  var cnt=document.querySelector('#scr-work .wizard > div:last-of-type');
-  var countEl=document.evaluate('//div[contains(text(),"cattle selected")]',document,null,XPathResult.FIRST_ORDERED_NODE_TYPE,null).singleNodeValue;
-  if(countEl)countEl.textContent=WS.selectedCattle.length+' cattle selected';
+  if(i>-1)WS.selectedCattle.splice(i,1);else WS.selectedCattle.push(id);
+  var item=document.getElementById('ci-'+id);
+  if(item){item.classList.toggle('selected',WS.selectedCattle.includes(id));var cb=item.querySelector('.cattle-checkbox');if(cb){cb.classList.toggle('checked',WS.selectedCattle.includes(id));cb.innerHTML=WS.selectedCattle.includes(id)?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':'';}}
+  var cnt=document.getElementById('ws-sel-count');
+  if(cnt)cnt.textContent=WS.selectedCattle.length+' cattle selected';
 }
 
 function wsFilterCattle(){
   var q=(document.getElementById('ws-cattle-search').value||'').toLowerCase();
-  document.querySelectorAll('.cattle-select-item').forEach(function(el){
+  document.querySelectorAll('#ws-cattle-list .cattle-select-item').forEach(function(el){
     var tag=el.querySelector('div div:first-child').textContent.toLowerCase();
     el.style.display=(!q||tag.includes(q))?'':'none';
   });
@@ -574,7 +776,7 @@ function wsFilterCattle(){
 
 async function handlePhoto(event){
   var file=event.target.files[0]; if(!file)return;
-  WS._photoStatus='Reading tag numbers with AI…';
+  WS._photoStatus='<i class="ti ti-loader" style="animation:spin 1s linear infinite"></i> Reading tags with AI…';
   renderStep();
   var reader=new FileReader();
   reader.onload=async function(e){
@@ -585,20 +787,19 @@ async function handlePhoto(event){
         headers:{'Content-Type':'application/json','x-api-key':AKEY,'anthropic-version':'2023-06-01'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
-          {type:'text',text:'Extract all cattle ear tag numbers from this handwritten list. Tags may look like: 19-21F4, M-63, N-5, 24-001. Return ONLY a valid JSON array of strings. Example: ["19-21F4","M-63","N-5"]'}
+          {type:'text',text:'Extract all cattle ear tag numbers from this handwritten list. Tags may look like: 19-21F4, M-63, N-5, 24-001, 19-FR2. Return ONLY a valid JSON array of strings, nothing else. Example: ["19-21F4","M-63","N-5"]'}
         ]}]})
       });
       var d=await res.json();
       var txt=(d.content||[]).map(function(i){return i.text||'';}).join('');
       var tags=JSON.parse(txt.replace(/```json|```/g,'').trim());
       tags=tags.map(function(t){return String(t).toUpperCase().trim();});
-      // match to cattle in system
       var matched=APP.cattle.filter(function(c){return tags.includes(c.tag)&&c.farm_id===WS.farmId;});
       matched.forEach(function(c){if(!WS.selectedCattle.includes(c.id))WS.selectedCattle.push(c.id);});
       var notFound=tags.filter(function(t){return !APP.cattle.find(function(c){return c.tag===t;});});
-      WS._photoStatus='✓ Found '+matched.length+' cattle from photo.'+(notFound.length?' Not in system: '+notFound.join(', '):'');
+      WS._photoStatus='&#10003; Found <strong>'+matched.length+'</strong> cattle.'+(notFound.length?' Not in system: '+notFound.join(', '):'');
     }catch(err){
-      WS._photoStatus='Could not read photo — please select cattle manually.';
+      WS._photoStatus='&#x26A0; Could not read photo — please select manually. ('+err.message+')';
     }
     renderStep();
   };
@@ -609,22 +810,22 @@ function wsNext(){
   if(WS.step===1&&!WS.farmId){alert('Please select a farm.');return;}
   if(WS.step===2&&!WS.workTypes.length){alert('Please select at least one work type.');return;}
   if(WS.step===3){
-    // collect calving details
     if(WS.workTypes.includes('Calving record')){
       WS._calving={damTag:(document.getElementById('cv-dam')||{}).value||'',calfTag:(document.getElementById('cv-calf')||{}).value||'',gender:(document.getElementById('cv-gender')||{}).value,outcome:(document.getElementById('cv-outcome')||{}).value,weight:parseFloat((document.getElementById('cv-weight')||{}).value)||null,date:(document.getElementById('cv-date')||{}).value};
     }
     if(WS.workTypes.includes('Camp rotation')||WS.workTypes.includes('Herd split')){
       WS._rotation={fromId:(document.getElementById('rot-from')||{}).value,toId:(document.getElementById('rot-to')||{}).value};
     }
+    if(WS.workTypes.includes('Death')){
+      WS._death={campId:(document.getElementById('death-camp')||{}).value,notes:(document.getElementById('death-notes')||{}).value};
+    }
+    if(WS.workTypes.includes('Sale')){
+      WS._sale={buyer:(document.getElementById('sale-buyer')||{}).value,heiferPrice:(document.getElementById('sale-heifer-price')||{}).value,tollyPrice:(document.getElementById('sale-tolly-price')||{}).value,notes:(document.getElementById('sale-notes')||{}).value};
+    }
     // collect custom products
-    WS.customProds={};
     WS.workTypes.forEach(function(wt){
       var inp=document.getElementById('custom-'+wt.replace(/\s/g,'-'));
-      if(inp&&inp.value.trim()){
-        if(!WS.treatmentDetails[wt])WS.treatmentDetails[wt]=[];
-        WS.treatmentDetails[wt].push(inp.value.trim());
-        WS.customProds[wt]=inp.value.trim();
-      }
+      if(inp&&inp.value.trim()){if(!WS.treatmentDetails[wt])WS.treatmentDetails[wt]=[];WS.treatmentDetails[wt].push(inp.value.trim());}
     });
   }
   WS.step++; renderStep();
@@ -634,68 +835,74 @@ function wsPrev(){WS.step--;renderStep();}
 async function wsSave(){
   var notes=(document.getElementById('ws-notes')||{}).value||'';
   var today=new Date().toISOString().split('T')[0];
-  var allProducts=[];
-  Object.values(WS.treatmentDetails).forEach(function(prods){prods.forEach(function(p){if(!allProducts.includes(p))allProducts.push(p);});});
+  var allProds=[];
+  Object.values(WS.treatmentDetails).forEach(function(prods){prods.forEach(function(p){if(!allProds.includes(p))allProds.push(p);});});
   var workTypeSummary=WS.workTypes.join(', ');
-
-  var sr=await db.from('work_sessions').insert({farm_id:WS.farmId,manager_id:APP.managerId,session_date:today,work_type:workTypeSummary,notes:notes}).select().single();
+  // add sale/death context to notes
+  if(WS._sale&&WS._sale.buyer)notes=(notes?notes+' | ':'')+'Sale to: '+WS._sale.buyer+(WS._sale.heiferPrice?' | Heifers: R'+WS._sale.heiferPrice+'/kg':'')+(WS._sale.tollyPrice?' | Tollies: R'+WS._sale.tollyPrice+'/kg':'');
+  if(WS._death&&WS._death.notes)notes=(notes?notes+' | ':'')+'Death notes: '+WS._death.notes;
+  var sr=await db.from('work_sessions').insert({farm_id:WS.farmId,manager_id:APP.managerId,session_date:today,work_type:workTypeSummary,notes:notes,status:'active'}).select().single();
   if(sr.error){alert('Error: '+sr.error.message);return;}
   var sess=sr.data;
-
-  // treatments
-  if(allProducts.length)await db.from('session_treatments').insert(allProducts.map(function(t){return{session_id:sess.id,treatment:t};}));
-
-  // session cattle + health logs
+  if(allProds.length)await db.from('session_treatments').insert(allProds.map(function(t){return{session_id:sess.id,treatment:t};}));
   if(WS.selectedCattle.length){
     await db.from('session_cattle').insert(WS.selectedCattle.map(function(id){return{session_id:sess.id,cattle_id:id};}));
     var hlogs=[];
     WS.selectedCattle.forEach(function(cid){
-      allProducts.forEach(function(p){hlogs.push({cattle_id:cid,session_id:sess.id,treatment:p,treatment_date:today,administered_by:APP.managerId});});
-      // if work types with no products, log the work type itself
-      WS.workTypes.forEach(function(wt){
-        if(['Weight recording','Pregnancy check'].includes(wt)){hlogs.push({cattle_id:cid,session_id:sess.id,treatment:wt,treatment_date:today,administered_by:APP.managerId});}
-      });
+      allProds.forEach(function(p){hlogs.push({cattle_id:cid,session_id:sess.id,treatment:p,treatment_date:today,administered_by:APP.managerId});});
+      WS.workTypes.forEach(function(wt){if(['Weight recording','Pregnancy check'].includes(wt)){hlogs.push({cattle_id:cid,session_id:sess.id,treatment:wt,treatment_date:today,administered_by:APP.managerId});}});
     });
     if(hlogs.length)await db.from('health_logs').insert(hlogs);
+    // handle deaths
+    if(WS.workTypes.includes('Death')){
+      var cause=(WS.treatmentDetails['Death']||['Unknown'])[0];
+      await db.from('cattle').update({status:'Deceased',active:false,notes:'Died '+today+': '+cause}).in('id',WS.selectedCattle);
+    }
+    // handle sales
+    if(WS.workTypes.includes('Sale')){
+      var saleNote='Sold '+today+(WS._sale&&WS._sale.buyer?' to '+WS._sale.buyer:'');
+      await db.from('cattle').update({status:'Sold',active:false,notes:saleNote}).in('id',WS.selectedCattle);
+    }
+    // handle camp rotation/split
+    if(WS._rotation){
+      var moves=WS.selectedCattle.map(function(cid){var cow=APP.cattle.find(function(c){return c.id===cid;});return{cattle_id:cid,from_camp_id:cow?cow.camp_id:null,to_camp_id:WS._rotation.toId,move_date:today,moved_by:APP.managerId};});
+      await db.from('camp_moves').insert(moves);
+      await db.from('cattle').update({camp_id:WS._rotation.toId}).in('id',WS.selectedCattle);
+    }
   }
-
-  // calving
+  // calving record
   if(WS._calving&&WS._calving.calfTag){
     var cv=WS._calving;
     var dr=await db.from('cattle').select('id').eq('tag',cv.damTag).maybeSingle();
     var cr=await db.from('cattle').insert({tag:cv.calfTag,farm_id:WS.farmId,status:'Calf',gender:cv.gender==='Bull'?'Male':'Female',dam_tag:cv.damTag,active:true,birth_year:new Date().getFullYear()}).select().single();
     if(dr.data&&cr.data)await db.from('calving_records').insert({dam_id:dr.data.id,calf_id:cr.data.id,birth_date:cv.date,gender:cv.gender,outcome:cv.outcome,birth_weight_kg:cv.weight});
   }
-
-  // camp rotation/split
-  if(WS._rotation&&WS.selectedCattle.length){
-    var moves=WS.selectedCattle.map(function(cid){
-      var cow=APP.cattle.find(function(c){return c.id===cid;});
-      return{cattle_id:cid,from_camp_id:cow?cow.camp_id:null,to_camp_id:WS._rotation.toId,move_date:today,moved_by:APP.managerId};
-    });
-    await db.from('camp_moves').insert(moves);
-    await db.from('cattle').update({camp_id:WS._rotation.toId}).in('id',WS.selectedCattle);
-  }
-
   document.getElementById('work-content').innerHTML='<div class="success-screen"><div class="success-icon"><i class="ti ti-circle-check"></i></div><div style="font-size:20px;font-weight:700;margin-bottom:8px">Session saved!</div><div style="font-size:13px;color:var(--text2);margin-bottom:8px">'+workTypeSummary+'</div><div style="font-size:13px;color:var(--text2);margin-bottom:28px">'+WS.farmName+' &middot; '+WS.selectedCattle.length+' cattle</div><button class="btn-next" style="padding:10px 28px;font-size:14px" onclick="startWork()">+ New session</button></div>';
-  loadDashboard();
+  loadCattle(); loadDashboard();
 }
 
-// ── SESSIONS (with edit) ───────────────────────────────────────────
+// ── SESSIONS ───────────────────────────────────────────────────────
 async function loadSessions(){
   var r=await db.from('work_sessions').select('*,farms(name),managers(name)').order('session_date',{ascending:false}).limit(50);
   var sess=r.data||[];
   var el=document.getElementById('sessions-list');
   el.innerHTML=sess.length?sess.map(function(s){
-    return '<div style="padding:10px 0;border-bottom:var(--border)">'+
+    var cancelled=s.status==='cancelled';
+    return '<div style="padding:10px 0;border-bottom:var(--border);opacity:'+(cancelled?.5:1)+'">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-      '<div><div style="font-weight:500;font-size:13px">'+(s.work_type||'')+'</div>'+
+      '<div style="flex:1"><div style="font-weight:500;font-size:13px">'+(s.work_type||'')+(cancelled?' <span class="badge badge-gray">Cancelled</span>':'')+'</div>'+
       '<div style="font-size:12px;color:var(--text2);margin-top:2px">'+(s.session_date||'')+' &middot; '+((s.farms&&s.farms.name)||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div>'+
-      (s.notes?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>':'')+
-      '</div>'+
-      '<button onclick="openEditSession(\''+s.id+'\')" style="background:var(--green-light);color:var(--green);border:none;border-radius:6px;padding:4px 10px;font-size:11px;flex-shrink:0;margin-left:8px">Edit</button>'+
+      (s.notes?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>':'')+'</div>'+
+      (!cancelled?'<button onclick="openEditSession(\''+s.id+'\')" style="background:var(--green-light);color:var(--green);border:none;border-radius:6px;padding:4px 8px;font-size:11px;margin-left:6px;flex-shrink:0">Edit</button>':'')+
+      (!cancelled?'<button onclick="cancelSession(\''+s.id+'\')" style="background:var(--red-light);color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:11px;margin-left:4px;flex-shrink:0">Cancel</button>':'')+
       '</div></div>';
   }).join(''):'<div class="empty-state">No sessions yet</div>';
+}
+
+async function cancelSession(id){
+  if(!confirm('Mark this session as cancelled? The records will be kept but marked inactive.'))return;
+  await db.from('work_sessions').update({status:'cancelled'}).eq('id',id);
+  loadSessions(); loadDashboard();
 }
 
 async function openEditSession(sessionId){
@@ -704,66 +911,44 @@ async function openEditSession(sessionId){
   var linkedIds=linked.map(function(l){return l.cattle_id;});
   var sr=await db.from('work_sessions').select('*').eq('id',sessionId).single();
   var sess=sr.data;
-
   var h='<div style="font-size:13px;font-weight:500;margin-bottom:4px">'+(sess.work_type||'')+'</div>';
   h+='<div style="font-size:12px;color:var(--text2);margin-bottom:14px">'+(sess.session_date||'')+'</div>';
-  h+='<div class="sec-lbl">Cattle in this session ('+linked.length+')</div>';
-  h+='<div style="max-height:200px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:12px">';
-  h+=linked.map(function(l){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px">'+
-      '<span style="font-weight:500">'+(l.cattle&&l.cattle.tag||'—')+'</span>'+
-      '<button onclick="removeFromSession(\''+l.id+'\',\''+sessionId+'\')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button>'+
-      '</div>';
-  }).join('');
+  h+='<div class="sec-lbl">Cattle in session ('+linked.length+')</div>';
+  h+='<div style="max-height:180px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:12px">';
+  h+=linked.map(function(l){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px"><span style="font-weight:500">'+(l.cattle&&l.cattle.tag||'—')+'</span><button onclick="removeFromSession(\''+l.id+'\',\''+sessionId+'\')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button></div>';}).join('');
   h+='</div>';
-  h+='<div class="sec-lbl">Add more cattle to this session</div>';
-  h+='<input class="search-input" id="edit-search" placeholder="Search tag…" oninput="filterEditCattle(\''+sessionId+'\')" style="margin-bottom:6px">';
-  h+='<div id="edit-cattle-list" style="max-height:200px;overflow-y:auto;border:var(--border);border-radius:8px">';
+  h+='<div class="sec-lbl">Add cattle to this session</div>';
+  h+='<input class="search-input" id="edit-search" placeholder="Search tag…" oninput="filterEditCattle()" style="margin-bottom:6px">';
+  h+='<div id="edit-cattle-list" style="max-height:180px;overflow-y:auto;border:var(--border);border-radius:8px">';
   var available=APP.cattle.filter(function(c){return !linkedIds.includes(c.id);});
-  h+=available.map(function(c){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px" data-tag="'+c.tag+'">'+
-      '<span><strong>'+c.tag+'</strong> <span style="color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</span></span>'+
-      '<button onclick="addToSession(\''+c.id+'\',\''+sessionId+'\')" style="background:var(--green-light);color:var(--green);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Add</button>'+
-      '</div>';
-  }).join('');
+  h+=available.map(function(c){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px" data-tag="'+c.tag+'"><span><strong>'+c.tag+'</strong> <span style="color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</span></span><button onclick="addToSession(\''+c.id+'\',\''+sessionId+'\')" style="background:var(--green-light);color:var(--green);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Add</button></div>';}).join('');
   h+='</div>';
-  h+='<div class="fg" style="margin-top:12px"><label>Add treatment note</label><input id="edit-treatment" placeholder="e.g. Eye treatment — Terramycin"></div>';
-  h+='<button class="btn-full" onclick="addTreatmentToSession(\''+sessionId+'\')">Save treatment note</button>';
-
+  h+='<div class="fg" style="margin-top:12px"><label>Add treatment to all cattle in session</label><input id="edit-treatment" placeholder="e.g. Eye treatment — Terramycin"></div>';
+  h+='<button class="btn-full" onclick="addTreatmentToSession(\''+sessionId+'\')">Add treatment</button>';
   openModal('Edit session',h);
 }
 
-function filterEditCattle(sessionId){
+function filterEditCattle(){
   var q=(document.getElementById('edit-search').value||'').toLowerCase();
-  document.querySelectorAll('#edit-cattle-list > div').forEach(function(el){
-    var tag=(el.dataset.tag||'').toLowerCase();
-    el.style.display=(!q||tag.includes(q))?'':'none';
-  });
+  document.querySelectorAll('#edit-cattle-list > div').forEach(function(el){el.style.display=(!q||(el.dataset.tag||'').toLowerCase().includes(q))?'':'none';});
 }
 
-async function removeFromSession(scId,sessionId){
-  await db.from('session_cattle').delete().eq('id',scId);
-  openEditSession(sessionId);
-}
+async function removeFromSession(scId,sessionId){await db.from('session_cattle').delete().eq('id',scId);openEditSession(sessionId);}
 
 async function addToSession(cattleId,sessionId){
-  var sr=await db.from('work_sessions').select('work_type,session_date').eq('id',sessionId).single();
   await db.from('session_cattle').insert({session_id:sessionId,cattle_id:cattleId});
   openEditSession(sessionId);
 }
 
 async function addTreatmentToSession(sessionId){
   var t=(document.getElementById('edit-treatment')||{}).value||'';
-  if(!t.trim()){alert('Please enter a treatment note.');return;}
-  // get all cattle in session
+  if(!t.trim()){alert('Please enter a treatment.');return;}
   var r=await db.from('session_cattle').select('cattle_id').eq('session_id',sessionId);
   var ids=(r.data||[]).map(function(x){return x.cattle_id;});
   var today=new Date().toISOString().split('T')[0];
-  if(ids.length){
-    await db.from('health_logs').insert(ids.map(function(cid){return{cattle_id:cid,session_id:sessionId,treatment:t.trim(),treatment_date:today,administered_by:APP.managerId};}));
-  }
+  if(ids.length){await db.from('health_logs').insert(ids.map(function(cid){return{cattle_id:cid,session_id:sessionId,treatment:t.trim(),treatment_date:today,administered_by:APP.managerId};}));}
   await db.from('session_treatments').insert({session_id:sessionId,treatment:t.trim()});
-  alert('Treatment added to '+ids.length+' cattle in this session.');
+  alert('Treatment added to '+ids.length+' cattle.');
   closeModal();
 }
 
@@ -779,10 +964,15 @@ async function loadReports(){
   document.getElementById('r-bulls').textContent=bulls;
   document.getElementById('r-heifers').textContent=heifers;
   document.getElementById('r-rate').textContent=total?Math.round((total-losses)/total*100)+'%':'—';
+  // deaths
+  var rd=await db.from('cattle').select('tag,notes,updated_at').eq('status','Deceased').order('updated_at',{ascending:false}).limit(20);
+  document.getElementById('deaths-log').innerHTML=(rd.data&&rd.data.length)?rd.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-red">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No deaths recorded this year</div>';
+  // sales
+  var rs=await db.from('cattle').select('tag,notes,updated_at').eq('status','Sold').order('updated_at',{ascending:false}).limit(20);
+  document.getElementById('sales-log').innerHTML=(rs.data&&rs.data.length)?rs.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-amber">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No sales recorded this year</div>';
+  // health logs
   var rl=await db.from('health_logs').select('*,cattle(tag)').order('treatment_date',{ascending:false}).limit(30);
   document.getElementById('health-log').innerHTML=(rl.data&&rl.data.length)?rl.data.map(function(l){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-blue">'+l.treatment+'</span><span style="color:var(--text2);margin-left:6px">'+((l.cattle&&l.cattle.tag)||'—')+' &middot; '+(l.treatment_date||'')+'</span></div>';}).join(''):'<div class="empty-state">No treatments recorded yet</div>';
-  var rm=await db.from('camp_moves').select('*,cattle(tag),from_camp:from_camp_id(name),to_camp:to_camp_id(name)').order('move_date',{ascending:false}).limit(30);
-  document.getElementById('camp-log').innerHTML=(rm.data&&rm.data.length)?rm.data.map(function(m){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><strong>'+((m.cattle&&m.cattle.tag)||'—')+'</strong><span style="color:var(--text2)"> &middot; '+((m.from_camp&&m.from_camp.name)||'?')+' &rarr; '+((m.to_camp&&m.to_camp.name)||'?')+' &middot; '+(m.move_date||'')+'</span></div>';}).join(''):'<div class="empty-state">No camp moves recorded yet</div>';
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────
