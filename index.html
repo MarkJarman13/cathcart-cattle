@@ -782,17 +782,13 @@ async function handlePhoto(event){
   reader.onload=async function(e){
     var b64=e.target.result.split(',')[1];
     try{
-      var res=await fetch('https://api.anthropic.com/v1/messages',{
+      var res=await fetch('/api/read-tags',{
         method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':AKEY,'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
-          {type:'text',text:'Extract all cattle ear tag numbers from this handwritten list. Tags may look like: 19-21F4, M-63, N-5, 24-001, 19-FR2. Return ONLY a valid JSON array of strings, nothing else. Example: ["19-21F4","M-63","N-5"]'}
-        ]}]})
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({image:b64,mediaType:file.type})
       });
       var d=await res.json();
-      var txt=(d.content||[]).map(function(i){return i.text||'';}).join('');
-      var tags=JSON.parse(txt.replace(/```json|```/g,'').trim());
+      var tags=d.tags;
       tags=tags.map(function(t){return String(t).toUpperCase().trim();});
       var matched=APP.cattle.filter(function(c){return tags.includes(c.tag)&&c.farm_id===WS.farmId;});
       matched.forEach(function(c){if(!WS.selectedCattle.includes(c.id))WS.selectedCattle.push(c.id);});
