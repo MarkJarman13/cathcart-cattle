@@ -769,7 +769,8 @@ function wsToggleCow(id){
 function wsFilterCattle(){
   var q=(document.getElementById('ws-cattle-search').value||'').toLowerCase();
   document.querySelectorAll('#ws-cattle-list .cattle-select-item').forEach(function(el){
-    var tag=el.querySelector('div div:first-child').textContent.toLowerCase();
+    var tagEl=el.querySelector('[style*="font-weight:600"]')||el.querySelector('div:last-child div:first-child');
+    var tag=(tagEl?tagEl.textContent:'').toLowerCase();
     el.style.display=(!q||tag.includes(q))?'':'none';
   });
 }
