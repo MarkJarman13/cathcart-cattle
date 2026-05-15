@@ -913,92 +913,95 @@ async function openEditSession(sessionId){
   var rt=await db.from('session_treatments').select('treatment').eq('session_id',sessionId);
   var treatments=(rt.data||[]).map(function(t){return t.treatment;});
   var linkedIds=linked.map(function(l){return l.cattle_id;});
+  window._SE={id:sessionId,linked:linked,avail:APP.cattle.filter(function(c){return !linkedIds.includes(c.id);})};
   var h='<div style="font-size:13px;font-weight:600;margin-bottom:2px">'+(sess.work_type||'')+'</div>';
-  h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">'+(sess.session_date||'')+' &middot; '+((sess.farms&&sess.farms.name)||'')+' &middot; '+((sess.managers&&sess.managers.name)||'')+'</div>';
+  h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">'+(sess.session_date||'')+' &middot; '+((sess.farms&&sess.farms.name)||'')+'</div>';
   if(treatments.length){h+='<div style="margin-bottom:10px">'+treatments.map(function(t){return '<span class="badge badge-blue" style="margin:2px">'+t+'</span>';}).join('')+'</div>';}
-  h+='<div class="sec-lbl">Cattle in session ('+linked.length+') &mdash; tap pencil to manage treatments</div>';
+  h+='<div class="sec-lbl">Cattle ('+linked.length+') &mdash; tap to manage treatments</div>';
   h+='<div style="max-height:300px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:12px">';
-  h+=linked.map(function(l){
-    var ctag=l.cattle&&l.cattle.tag||'?';
-    var cid=l.cattle_id;
+  h+=linked.map(function(l,i){
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 8px;border-bottom:var(--border);font-size:13px">'+
-      '<div class="atx-row" data-cid="'+cid+'" data-tag="'+ctag+'" data-sid="'+sessionId+'" onclick="openAnimalTxRow(this)" style="flex:1;cursor:pointer">'+
-      '<span style="font-weight:600">'+ctag+'</span>'+
-      '<span style="font-size:11px;color:var(--text2);margin-left:8px">'+(l.cattle&&l.cattle.breed||'')+(l.cattle&&l.cattle.camps?' &middot; '+l.cattle.camps.name:'')+'</span>'+
-      ' <span style="font-size:11px;color:var(--green)">&#x270E; treatments</span></div>'+
-      '<button onclick="removeFromSession(''+l.id+'',''+sessionId+'')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:3px 8px;font-size:11px;margin-left:6px;flex-shrink:0">Remove</button>'+
+      '<div onclick="seOpenAnimal('+i+')" style="flex:1;cursor:pointer">'+
+      '<span style="font-weight:600">'+(l.cattle&&l.cattle.tag||'—')+'</span>'+
+      '<span style="font-size:11px;color:var(--text2);margin-left:8px">'+(l.cattle&&l.cattle.breed||'')+'</span>'+
+      ' <span style="font-size:11px;color:var(--green)">&#x270E;</span></div>'+
+      '<button onclick="seRemove('+i+')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:3px 8px;font-size:11px;margin-left:6px;flex-shrink:0">Remove</button>'+
       '</div>';
   }).join('');
   h+='</div>';
-  h+='<div class="sec-lbl">Add cattle to session</div>';
+  h+='<div class="sec-lbl">Add cattle</div>';
   h+='<input class="search-input" id="edit-search" placeholder="Search tag…" oninput="filterEditCattle()" style="margin-bottom:6px">';
-  var available=APP.cattle.filter(function(c){return !linkedIds.includes(c.id);});
   h+='<div id="edit-cattle-list" style="max-height:180px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:12px">';
-  h+=available.map(function(c){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px" data-tag="'+c.tag+'"><span><strong>'+c.tag+'</strong> <span style="color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</span></span><button onclick="addToSession(''+c.id+'',''+sessionId+'')" style="background:var(--green-light);color:var(--green);border:none;border-radius:4px;padding:3px 8px;font-size:11px">Add</button></div>';}).join('');
+  h+=window._SE.avail.map(function(c,i){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px" data-tag="'+c.tag+'"><span><strong>'+c.tag+'</strong></span><button onclick="seAdd('+i+')" style="background:var(--green-light);color:var(--green);border:none;border-radius:4px;padding:3px 8px;font-size:11px">Add</button></div>';}).join('');
   h+='</div>';
-  h+='<div class="sec-lbl">Add treatment to ALL cattle in this session</div>';
+  h+='<div class="sec-lbl">Add treatment to ALL cattle</div>';
   h+='<input id="edit-treatment" class="search-input" placeholder="e.g. Terramycin eye ointment" style="margin-bottom:6px">';
-  h+='<button class="btn-full" onclick="addTreatmentToSession(''+sessionId+'')">Add to all cattle</button>';
+  h+='<button class="btn-full" onclick="seTreatAll()">Add to all cattle</button>';
   openModal('Edit session',h);
 }
-
-
-function openAnimalTxRow(el){
-  var cid=el.dataset.cid||el.closest('[data-cid]').dataset.cid;
-  var tag=el.dataset.tag||el.closest('[data-tag]').dataset.tag;
-  var sid=el.dataset.sid||el.closest('[data-sid]').dataset.sid;
-  openAnimalTx(cid,tag,sid);
+function seRemove(i){var l=window._SE.linked[i];if(l)removeFromSession(l.id,window._SE.id);}
+function seAdd(i){var c=window._SE.avail[i];if(c)addToSession(c.id,window._SE.id);}
+function seOpenAnimal(i){var l=window._SE.linked[i];if(l)openAnimalTx(l.cattle_id,(l.cattle&&l.cattle.tag||'?'),window._SE.id);}
+async function seTreatAll(){
+  var t=(document.getElementById('edit-treatment')||{}).value||'';
+  if(!t.trim()){alert('Please enter a treatment.');return;}
+  var ids=window._SE.linked.map(function(l){return l.cattle_id;});
+  var today=new Date().toISOString().split('T')[0];
+  if(ids.length){await db.from('health_logs').insert(ids.map(function(cid){return{cattle_id:cid,session_id:window._SE.id,treatment:t.trim(),treatment_date:today,administered_by:APP.managerId};}));}
+  await db.from('session_treatments').insert({session_id:window._SE.id,treatment:t.trim()});
+  alert('Treatment added to '+ids.length+' cattle.');
+  closeModal();
 }
 
 async function openAnimalTx(cattleId,tag,sessionId){
-  var rl=await db.from('health_logs').select('id,treatment,treatment_date').eq('cattle_id',cattleId).eq('session_id',sessionId).order('treatment_date',{ascending:false});
-  var logs=rl.data||[];
+  window._AT={cattleId:cattleId,tag:tag,sessionId:sessionId,prods:[]};
   var allProds=[];
   Object.values(PRODUCTS).forEach(function(arr){arr.forEach(function(p){if(!allProds.includes(p))allProds.push(p);});});
+  window._AT.prods=allProds;
+  var rl=await db.from('health_logs').select('id,treatment').eq('cattle_id',cattleId).eq('session_id',sessionId).order('treatment_date',{ascending:false});
+  var logs=rl.data||[];
+  window._AT.logs=logs;
   var h='<div style="font-size:15px;font-weight:700;margin-bottom:2px">'+tag+'</div>';
   h+='<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Treatments for this animal in this session only</div>';
   h+='<div class="sec-lbl">Current treatments ('+logs.length+')</div>';
   if(logs.length){
     h+='<div style="border:var(--border);border-radius:8px;margin-bottom:12px">';
-    h+=logs.map(function(l){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px"><span class="badge badge-blue">'+l.treatment+'</span><button onclick="removeAnimalTx(''+l.id+'',''+cattleId+'',''+tag+'',''+sessionId+'')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button></div>';}).join('');
+    h+=logs.map(function(l,i){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:var(--border);font-size:12px"><span class="badge badge-blue">'+l.treatment+'</span><button onclick="atRemove('+i+')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button></div>';}).join('');
     h+='</div>';
   } else {
-    h+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px">No treatments recorded for this animal in this session</div>';
+    h+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px">No treatments yet for this animal</div>';
   }
-  h+='<div class="sec-lbl">Add treatment to this animal only</div>';
+  h+='<div class="sec-lbl">Add treatment</div>';
   h+='<div class="pill-group">';
-  h+=allProds.map(function(p){return '<div class="pill" data-cid="'+cattleId+'" data-sid="'+sessionId+'" data-tag="'+tag+'" data-prod="'+p.replace(/"/g,'&quot;')+'" onclick="addAnimalTxPill(this)">'+p+'</div>';}).join('');
+  h+=allProds.map(function(p,i){return '<div class="pill" onclick="atAddProd('+i+')">'+p+'</div>';}).join('');
   h+='</div>';
-  h+='<div class="fg"><label style="font-size:12px;color:var(--text2)">Custom treatment</label><input id="atx-custom" placeholder="Type treatment name"></div>';
-  h+='<button class="btn-full" onclick="addAnimalTxCustom(''+cattleId+'',''+sessionId+'',''+tag+'')">Add custom treatment</button>';
-  h+='<button onclick="openEditSession(''+sessionId+'')" style="width:100%;padding:9px;background:transparent;border:var(--border);border-radius:8px;font-size:13px;color:var(--text2);margin-top:8px">← Back to session</button>';
+  h+='<input id="at-custom" class="search-input" placeholder="Or type a custom treatment">';
+  h+='<button class="btn-full" onclick="atAddCustom()" style="margin-bottom:8px">Add custom treatment</button>';
+  h+='<button onclick="openEditSession(window._AT.sessionId)" style="width:100%;padding:9px;background:transparent;border:var(--border);border-radius:8px;font-size:13px;color:var(--text2)">← Back to session</button>';
   openModal('Treatments: '+tag,h);
 }
-
-async function removeAnimalTx(logId,cattleId,tag,sessionId){
-  if(!confirm('Remove this treatment from '+tag+'?'))return;
+async function atRemove(i){
+  var a=window._AT;
+  var logId=a.logs[i]&&a.logs[i].id;
+  if(!logId||!confirm('Remove this treatment from '+a.tag+'?'))return;
   await db.from('health_logs').delete().eq('id',logId);
-  openAnimalTx(cattleId,tag,sessionId);
+  openAnimalTx(a.cattleId,a.tag,a.sessionId);
 }
-
-async function addAnimalTxPill(el){
-  var cid=el.dataset.cid;
-  var sid=el.dataset.sid;
-  var tag=el.dataset.tag;
-  var prod=el.dataset.prod;
-  if(!cid||!sid||!prod)return;
+async function atAddProd(i){
+  var a=window._AT;
+  var prod=a.prods[i];
+  if(!prod)return;
   var today=new Date().toISOString().split('T')[0];
-  await db.from('health_logs').insert({cattle_id:cid,session_id:sid,treatment:prod,treatment_date:today,administered_by:APP.managerId});
-  el.classList.add('sel');
-  setTimeout(function(){openAnimalTx(cid,tag,sid);},300);
+  await db.from('health_logs').insert({cattle_id:a.cattleId,session_id:a.sessionId,treatment:prod,treatment_date:today,administered_by:APP.managerId});
+  openAnimalTx(a.cattleId,a.tag,a.sessionId);
 }
-
-async function addAnimalTxCustom(cattleId,sessionId,tag){
-  var t=(document.getElementById('atx-custom')||{}).value||'';
+async function atAddCustom(){
+  var a=window._AT;
+  var t=(document.getElementById('at-custom')||{}).value||'';
   if(!t.trim()){alert('Please enter a treatment.');return;}
   var today=new Date().toISOString().split('T')[0];
-  await db.from('health_logs').insert({cattle_id:cattleId,session_id:sessionId,treatment:t.trim(),treatment_date:today,administered_by:APP.managerId});
-  openAnimalTx(cattleId,tag,sessionId);
+  await db.from('health_logs').insert({cattle_id:a.cattleId,session_id:a.sessionId,treatment:t.trim(),treatment_date:today,administered_by:APP.managerId});
+  openAnimalTx(a.cattleId,a.tag,a.sessionId);
 }
 
 
