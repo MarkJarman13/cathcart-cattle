@@ -231,6 +231,8 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab" onclick="switchCattleTab(this,'Guildford/Browndale')">Guild/Brown</button>
         <button class="ftab" onclick="switchCattleTab(this,'Chilton')">Chilton</button>
         <button class="ftab" onclick="switchCattleTab(this,'frank')">Frank's</button>
+        <button class="ftab" onclick="switchCattleTab(this,'bulls')">Bulls</button>
+        <button class="ftab" onclick="switchCattleTab(this,'oxen')">Oxen</button>
       </div>
       <div class="card">
         <div class="card-hd"><span>Cattle register</span><button class="add-btn" onclick="openAddCow()">+ Add</button></div>
@@ -244,25 +246,33 @@ button{font-family:inherit;cursor:pointer}
       <div class="card"><div class="card-hd">Work sessions</div><div id="sessions-list"><div class="loading">Loading…</div></div></div>
     </div>
 
+    <!-- BREEDING -->
+    <div class="screen" id="scr-breeding">
+      <div class="ftabs" id="breed-tabs">
+        <button class="ftab active" onclick="switchBreedTab(this,'mating')">Mating</button>
+        <button class="ftab" onclick="switchBreedTab(this,'preg')">Preg Testing</button>
+        <button class="ftab" onclick="switchBreedTab(this,'bulls')">Bulls</button>
+        <button class="ftab" onclick="switchBreedTab(this,'herds')">Herds</button>
+      </div>
+      <div id="breed-content"><div class="loading">Loading…</div></div>
+    </div>
+
     <!-- REPORTS -->
     <div class="screen" id="scr-reports">
-      <div class="card"><div class="card-hd">Calving (YTD)</div>
-        <div class="metrics" style="margin-bottom:0">
-          <div class="metric"><div class="metric-val" id="r-bulls">—</div><div class="metric-lbl">Bulls</div></div>
-          <div class="metric"><div class="metric-val" id="r-heifers">—</div><div class="metric-lbl">Heifers</div></div>
-          <div class="metric"><div class="metric-val" id="r-rate">—</div><div class="metric-lbl">Success</div></div>
-        </div>
+      <div class="ftabs" id="report-tabs">
+        <button class="ftab active" onclick="switchReportTab(this,'cattle')">Cattle</button>
+        <button class="ftab" onclick="switchReportTab(this,'health')">Health</button>
+        <button class="ftab" onclick="switchReportTab(this,'mating')">Mating</button>
+        <button class="ftab" onclick="switchReportTab(this,'farm')">Farm</button>
       </div>
-      <div class="card"><div class="card-hd">Deaths (YTD)</div><div id="deaths-log"><div class="loading">Loading…</div></div></div>
-      <div class="card"><div class="card-hd">Sales (YTD)</div><div id="sales-log"><div class="loading">Loading…</div></div></div>
-      <div class="card"><div class="card-hd">Health treatments</div><div id="health-log"><div class="loading">Loading…</div></div></div>
+      <div id="report-content"><div class="loading">Loading…</div></div>
     </div>
 
   </div>
   <div class="bottom-nav">
     <button class="bnav-btn active" id="bn-dash" onclick="showScreen('dashboard',this);loadDashboard()"><i class="ti ti-layout-dashboard"></i>Home</button>
     <button class="bnav-btn" id="bn-work" onclick="showScreen('work',this);startWork()"><i class="ti ti-checklist"></i>Work</button>
-    <button class="bnav-btn" id="bn-farm" onclick="showScreen('farm',this);loadFarmView('Guildford/Browndale')"><i class="ti ti-map-pin"></i>Farm</button>
+    <button class="bnav-btn" id="bn-breed" onclick="showScreen('breeding',this);loadBreeding()"><i class="ti ti-heart"></i>Breed</button>
     <button class="bnav-btn" id="bn-cattle" onclick="showScreen('cattle',this);loadCattle()"><i class="ti ti-cow"></i>Cattle</button>
     <button class="bnav-btn" id="bn-sess" onclick="showScreen('sessions',this);loadSessions()"><i class="ti ti-history"></i>Sessions</button>
     <button class="bnav-btn" id="bn-rep" onclick="showScreen('reports',this);loadReports()"><i class="ti ti-chart-bar"></i>Reports</button>
@@ -320,6 +330,8 @@ var PRODUCTS={
 
 var BREEDS=['Fenfield Red','Red Angus','South Devon','Brangus','Cross','Unknown'];
 var STATUSES=['Breeding Cow','Heifer','Bull','Calf','Dry cow','Sold','Deceased'];
+var WEIGHT_TYPES=['Wean weight','Tracking weight','Sale weight'];
+var CROPS=['Lucern','Teff','Eragrostis','Dry maize','Silage maize','Cabbages'];
 
 // ── PIN LOGIN ──────────────────────────────────────────────────────
 function showPinEntry(){
@@ -549,7 +561,11 @@ function renderCattleTable(){
   q=q.toLowerCase();
   var list=APP.cattle.filter(function(c){
     var isFrank=/F\d*$/.test(c.tag)||c.tag.includes('-F');
-    var mf=APP.cattleFilter==='all'||(APP.cattleFilter==='frank'&&isFrank)||(APP.cattleFilter!=='frank'&&c.farms&&c.farms.name===APP.cattleFilter);
+    var mf=APP.cattleFilter==='all'||
+      (APP.cattleFilter==='frank'&&isFrank)||
+      (APP.cattleFilter==='bulls'&&c.is_bull)||
+      (APP.cattleFilter==='oxen'&&c.is_ox)||
+      (!['frank','bulls','oxen'].includes(APP.cattleFilter)&&c.farms&&c.farms.name===APP.cattleFilter);
     var mq=!q||c.tag.toLowerCase().includes(q)||(c.breed||'').toLowerCase().includes(q)||((c.camps&&c.camps.name)||'').toLowerCase().includes(q);
     return mf&&mq;
   });
@@ -727,9 +743,11 @@ function renderStep(){
     var farmCattle=APP.cattle.filter(function(c){return c.farm_id===WS.farmId;});
     h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Tap cattle to select. '+(WS.selectedCattle.length)+' selected.</div>';
     h+='<input class="search-input" id="ws-cattle-search" placeholder="Search tag…" oninput="wsFilterCattle()" style="margin-bottom:8px">';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">'+
       '<div class="photo-btn" onclick="document.getElementById(\'ph-cam\').click()"><i class="ti ti-camera"></i>Camera<input type="file" id="ph-cam" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)"></div>'+
-      '<div class="photo-btn" onclick="document.getElementById(\'ph-gal\').click()"><i class="ti ti-photo"></i>Gallery<input type="file" id="ph-gal" accept="image/*" style="display:none" onchange="handlePhoto(event)"></div></div>';
+      '<div class="photo-btn" onclick="document.getElementById(\'ph-gal\').click()"><i class="ti ti-photo"></i>Gallery<input type="file" id="ph-gal" accept="image/*" style="display:none" onchange="handlePhoto(event)"></div>'+
+      '<div class="photo-btn" onclick="document.getElementById(\'ph-xl\').click()"><i class="ti ti-file-spreadsheet"></i>Excel<input type="file" id="ph-xl" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelUpload(event)"></div></div>';
+    h+='<div id="excel-status"></div>';
     if(WS._photoStatus)h+='<div style="background:var(--blue-light);color:var(--blue);padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px">'+WS._photoStatus+'</div>';
     h+='<div id="ws-cattle-list" style="max-height:300px;overflow-y:auto;border:var(--border);border-radius:8px">';
     if(!farmCattle.length){h+='<div class="empty-state">No cattle found for this farm</div>';}
@@ -1032,31 +1050,11 @@ async function addTreatmentToSession(sessionId){
 
 // ── REPORTS ────────────────────────────────────────────────────────
 async function loadReports(){
-  var year=new Date().getFullYear();
-  var r=await db.from('calving_records').select('*').gte('birth_date',year+'-01-01');
-  var calves=r.data||[];
-  var bulls=calves.filter(function(c){return c.gender==='Bull';}).length;
-  var heifers=calves.filter(function(c){return c.gender==='Heifer';}).length;
-  var total=bulls+heifers;
-  var losses=calves.filter(function(c){return c.outcome!=='Alive';}).length;
-  document.getElementById('r-bulls').textContent=bulls;
-  document.getElementById('r-heifers').textContent=heifers;
-  document.getElementById('r-rate').textContent=total?Math.round((total-losses)/total*100)+'%':'—';
-  // deaths
-  var rd=await db.from('cattle').select('tag,notes,updated_at').eq('status','Deceased').order('updated_at',{ascending:false}).limit(20);
-  document.getElementById('deaths-log').innerHTML=(rd.data&&rd.data.length)?rd.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-red">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No deaths recorded this year</div>';
-  // sales
-  var rs=await db.from('cattle').select('tag,notes,updated_at').eq('status','Sold').order('updated_at',{ascending:false}).limit(20);
-  document.getElementById('sales-log').innerHTML=(rs.data&&rs.data.length)?rs.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-amber">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No sales recorded this year</div>';
-  // health logs
-  var rl=await db.from('health_logs').select('*,cattle(tag)').order('treatment_date',{ascending:false}).limit(30);
-  document.getElementById('health-log').innerHTML=(rl.data&&rl.data.length)?rl.data.map(function(l){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-blue">'+l.treatment+'</span><span style="color:var(--text2);margin-left:6px">'+((l.cattle&&l.cattle.tag)||'—')+' &middot; '+(l.treatment_date||'')+'</span></div>';}).join(''):'<div class="empty-state">No treatments recorded yet</div>';
+  var el = document.getElementById('report-content');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Loading…</div>';
+  if (currentReportTab==='cattle') await reportCattle(el);
+  else if (currentReportTab==='health') await reportHealth(el);
+  else if (currentReportTab==='mating') await reportMating(el);
+  else if (currentReportTab==='farm') await reportFarm(el);
 }
-
-// ── MODAL ──────────────────────────────────────────────────────────
-function openModal(title,body){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal-bg').classList.add('open');}
-function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
-function closeModalOutside(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
-</script>
-</body>
-</html>
