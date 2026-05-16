@@ -39,7 +39,18 @@ function checkPin(){
     pinBuffer='';updatePinDots();return;
   }
   document.getElementById('pin-error').textContent='';
-  doLogin(name);
+  // Wait for main script to be ready then call doLogin
+  var attempts=0;
+  var wait=setInterval(function(){
+    attempts++;
+    if(typeof doLogin==='function'){
+      clearInterval(wait);
+      doLogin(name);
+    } else if(attempts>20){
+      clearInterval(wait);
+      alert('App not ready yet — please refresh and try again.');
+    }
+  },100);
 }
 </script>
 <style>
