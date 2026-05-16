@@ -13,7 +13,8 @@ function pinPress(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updatePinDots();
 function pinDelete(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
 function pinClear(){pinBuffer='';updatePinDots();}
 function updatePinDots(){for(var i=0;i<4;i++){var dot=document.getElementById('pd'+i);if(dot)dot.classList.toggle('filled',i<pinBuffer.length);}}
-</script>2"></script>
+async function checkPin(){var name=document.getElementById('login-manager').value;var correct=({'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'})[name];if(pinBuffer!==correct){document.getElementById('pin-error').textContent='Incorrect PIN — try again';pinBuffer='';updatePinDots();return;}document.getElementById('pin-error').textContent='';await doLogin(name);}
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#fff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
