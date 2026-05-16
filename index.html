@@ -8,12 +8,39 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 var pinBuffer='';
-function showPinEntry(){var name=document.getElementById('login-manager').value;if(!name){document.getElementById('pin-section').classList.add('hidden');return;}pinBuffer='';updatePinDots();document.getElementById('pin-section').classList.remove('hidden');document.getElementById('pin-error').textContent='';}
-function pinPress(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updatePinDots();if(pinBuffer.length===4)setTimeout(checkPin,150);}
+function showPinEntry(){
+  var name=document.getElementById('login-manager').value;
+  if(!name){document.getElementById('pin-section').classList.add('hidden');return;}
+  pinBuffer='';
+  updatePinDots();
+  document.getElementById('pin-section').classList.remove('hidden');
+  document.getElementById('pin-error').textContent='';
+}
+function pinPress(d){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=d;
+  updatePinDots();
+  if(pinBuffer.length===4)setTimeout(function(){checkPin();},150);
+}
 function pinDelete(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
 function pinClear(){pinBuffer='';updatePinDots();}
-function updatePinDots(){for(var i=0;i<4;i++){var dot=document.getElementById('pd'+i);if(dot)dot.classList.toggle('filled',i<pinBuffer.length);}}
-async function checkPin(){var name=document.getElementById('login-manager').value;var correct=({'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'})[name];if(pinBuffer!==correct){document.getElementById('pin-error').textContent='Incorrect PIN — try again';pinBuffer='';updatePinDots();return;}document.getElementById('pin-error').textContent='';await doLogin(name);}
+function updatePinDots(){
+  for(var i=0;i<4;i++){
+    var dot=document.getElementById('pd'+i);
+    if(dot)dot.classList.toggle('filled',i<pinBuffer.length);
+  }
+}
+function checkPin(){
+  var name=document.getElementById('login-manager').value;
+  var pins={'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'};
+  var correct=pins[name];
+  if(pinBuffer!==correct){
+    document.getElementById('pin-error').textContent='Incorrect PIN — try again';
+    pinBuffer='';updatePinDots();return;
+  }
+  document.getElementById('pin-error').textContent='';
+  doLogin(name);
+}
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
