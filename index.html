@@ -5,14 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Cathcart Cattle</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-// ── INIT ──────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded',function(){
-  var sel=document.getElementById('login-manager');
-  if(sel)sel.addEventListener('change',showPinEntry);
-});
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#fff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
@@ -161,6 +154,7 @@ button{font-family:inherit;cursor:pointer}
         <option>Jarmans</option>
       </select>
     </div>
+    <button class="btn-primary" onclick="showPinEntry()" style="margin-bottom:12px">Continue</button>
     <div id="pin-section" class="hidden">
       <label style="display:block;font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">Enter your PIN</label>
       <div class="pin-dots">
@@ -301,7 +295,6 @@ var AKEY='sk-ant-api03-vR4AWGWehs95R0IRcSh7csszdhkj-fQkIacQ6xLBdA99VxhGIg11mZl-D
 var db;
 window.addEventListener('load',function(){db=supabase.createClient(SURL,SKEY);});
 
-var pinBuffer='';
 var PINS={'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'};
 var pinBuffer='';
 
@@ -337,9 +330,9 @@ var PRODUCTS={
 };
 
 var BREEDS=['Fenfield Red','Red Angus','South Devon','Brangus','Cross','Unknown'];
-var STATUSES=['Breeding Cow','Heifer','Bull','Calf','Dry cow','Sold','Deceased'];
 var WEIGHT_TYPES=['Wean weight','Tracking weight','Sale weight'];
 var CROPS=['Lucern','Teff','Eragrostis','Dry maize','Silage maize','Cabbages'];
+var STATUSES=['Breeding Cow','Heifer','Bull','Calf','Dry cow','Sold','Deceased'];
 
 // ── PIN LOGIN ──────────────────────────────────────────────────────
 function showPinEntry(){
@@ -1057,12 +1050,415 @@ async function addTreatmentToSession(sessionId){
 }
 
 // ── REPORTS ────────────────────────────────────────────────────────
-async function loadReports(){
-  var el = document.getElementById('report-content');
-  if (!el) return;
-  el.innerHTML = '<div class="loading">Loading…</div>';
-  if (currentReportTab==='cattle') await reportCattle(el);
-  else if (currentReportTab==='health') await reportHealth(el);
-  else if (currentReportTab==='mating') await reportMating(el);
-  else if (currentReportTab==='farm') await reportFarm(el);
+
+
+
+async function handleExcelUpload(event){
+  var file=event.target.files[0];
+  if(!file)return;
+  var status=document.getElementById('excel-status');
+  if(status)status.innerHTML='Reading file…';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var text=e.target.result;
+      var lines=text.split('\n').filter(function(l){return l.trim();});
+      var tags=[];
+      var start=lines[0]&&lines[0].toLowerCase().includes('tag')?1:0;
+      for(var i=start;i<lines.length;i++){
+        var tag=lines[i].split(',')[0].trim().replace(/"/g,'').toUpperCase();
+        if(tag)tags.push(tag);
+      }
+      var matched=APP.cattle.filter(function(c){return tags.includes(c.tag)&&c.farm_id===WS.farmId;});
+      var notFound=tags.filter(function(t){return !APP.cattle.find(function(c){return c.tag===t;});});
+      matched.forEach(function(c){if(!WS.selectedCattle.includes(c.id))WS.selectedCattle.push(c.id);});
+      WS._photoStatus='✓ Matched <strong>'+matched.length+'</strong> cattle from file.'+(notFound.length?' <span style="color:var(--red)">Not found: '+notFound.join(', ')+'</span>':'');
+      renderStep();
+    }catch(err){if(status)status.innerHTML='<span style="color:var(--red)">Error: '+err.message+'</span>';}
+  };
+  reader.readAsText(file);
 }
+
+
+// ── BREEDING TAB ───────────────────────────────────────────────────
+var currentBreedTab='mating';
+var currentReportTab='cattle';
+
+function switchBreedTab(btn,tab){
+  document.querySelectorAll('#breed-tabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  currentBreedTab=tab;
+  loadBreeding();
+}
+
+function switchReportTab(btn,tab){
+  document.querySelectorAll('#report-tabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  currentReportTab=tab;
+  loadReports();
+}
+
+async function loadBreeding(){
+  var el=document.getElementById('breed-content');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  if(currentBreedTab==='mating')await renderMating(el);
+  else if(currentBreedTab==='preg')await renderPregTesting(el);
+  else if(currentBreedTab==='bulls')await renderBulls(el);
+  else if(currentBreedTab==='herds')await renderHerds(el);
+}
+
+async function renderMating(el){
+  var rm=await db.from('mating_records').select('*,bull:bull_id(tag,breed),herd:herd_id(name,camps(name)),farms(name)').order('start_date',{ascending:false});
+  var records=rm.data||[];
+  var h='<div class="card"><div class="card-hd"><span>Active matings</span><button class="add-btn" onclick="openNewMating()">+ New mating</button></div>';
+  window._activeMatings=records.filter(function(r){return !r.end_date||new Date(r.end_date)>=new Date();});
+  if(window._activeMatings.length){
+    h+=window._activeMatings.map(function(r,i){
+      return '<div style="padding:10px 0;border-bottom:var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div><div style="font-weight:600;font-size:13px">'+(r.herd&&r.herd.name||'Unknown herd')+'</div>'+
+        '<div style="font-size:12px;color:var(--text2)">'+(r.herd&&r.herd.camps?r.herd.camps.name:'')+'</div>'+
+        '<div style="font-size:12px;color:var(--text2)">Bull: <strong>'+(r.bull&&r.bull.tag||'?')+'</strong></div>'+
+        '<div style="font-size:11px;color:var(--text3)">'+r.start_date+' → '+(r.end_date||'ongoing')+'</div></div>'+
+        '<button onclick="endMatingIdx('+i+')" style="background:var(--amber-light);color:var(--amber);border:none;border-radius:6px;padding:4px 8px;font-size:11px;flex-shrink:0">End</button>'+
+        '</div></div>';
+    }).join('');
+  } else {
+    h+='<div class="empty-state">No active matings</div>';
+  }
+  h+='</div>';
+  var past=records.filter(function(r){return r.end_date&&new Date(r.end_date)<new Date();});
+  if(past.length){
+    h+='<div class="card"><div class="card-hd">Past matings</div>';
+    h+=past.slice(0,10).map(function(r){return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px"><span style="font-weight:500">'+(r.herd&&r.herd.name||'?')+'</span> &middot; Bull: '+(r.bull&&r.bull.tag||'?')+' &middot; <span style="color:var(--text2)">'+r.start_date+' → '+r.end_date+'</span></div>';}).join('');
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+function endMatingIdx(i){var r=window._activeMatings&&window._activeMatings[i];if(r)endMating(r.id);}
+async function endMating(id){var today=new Date().toISOString().split('T')[0];await db.from('mating_records').update({end_date:today}).eq('id',id);loadBreeding();}
+
+async function openNewMating(){
+  var bulls=APP.cattle.filter(function(c){return c.is_bull;});
+  var rh=await db.from('herds').select('*,camps(name)').eq('active',true);
+  var herds=rh.data||[];
+  if(!bulls.length){alert('No bulls registered. Add a bull in the Cattle tab first.');return;}
+  var h='<div class="fg"><label>Select bull</label><select id="mt-bull">'+bulls.map(function(b){return '<option value="'+b.id+'">'+b.tag+' ('+(b.breed||'?')+')</option>';}).join('')+'</select></div>'+
+    '<div class="fg"><label>Select herd</label><select id="mt-herd">'+(herds.length?herds.map(function(h){return '<option value="'+h.id+'">'+h.name+(h.camps?' — '+h.camps.name:'')+'</option>';}).join(''):'<option value="">No herds — create one first</option>')+'</select></div>'+
+    '<div class="fg"><label>Start date</label><input id="mt-start" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>'+
+    '<div class="fg"><label>End date (optional)</label><input id="mt-end" type="date"></div>'+
+    '<div class="fg"><label>Notes</label><input id="mt-notes" placeholder="optional"></div>'+
+    '<button class="btn-full" onclick="saveMating()">Save mating</button>';
+  openModal('New mating record',h);
+}
+
+async function saveMating(){
+  var bullId=(document.getElementById('mt-bull')||{}).value;
+  var herdId=(document.getElementById('mt-herd')||{}).value;
+  var start=(document.getElementById('mt-start')||{}).value;
+  if(!bullId||!herdId||!start){alert('Please fill in all required fields.');return;}
+  var herd=(await db.from('herds').select('farm_id').eq('id',herdId).single()).data;
+  var farmId=herd?herd.farm_id:(APP.farms[0]&&APP.farms[0].id);
+  var r=await db.from('mating_records').insert({bull_id:bullId,herd_id:herdId,farm_id:farmId,start_date:start,end_date:(document.getElementById('mt-end')||{}).value||null,notes:(document.getElementById('mt-notes')||{}).value||null});
+  if(r.error){alert('Error: '+r.error.message);return;}
+  closeModal();loadBreeding();
+}
+
+async function renderPregTesting(el){
+  var rp=await db.from('pregnancy_tests').select('*,cattle(tag,camps(name))').order('test_date',{ascending:false}).limit(50);
+  var tests=rp.data||[];
+  var pregnant=tests.filter(function(t){return t.result==='Yes';}).length;
+  var notPregnant=tests.filter(function(t){return t.result==='No';}).length;
+  var h='<div class="metrics"><div class="metric"><div class="metric-val" style="color:var(--green)">'+pregnant+'</div><div class="metric-lbl">Pregnant</div></div>'+
+    '<div class="metric"><div class="metric-val" style="color:var(--red)">'+notPregnant+'</div><div class="metric-lbl">Not pregnant</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(pregnant+notPregnant?Math.round(pregnant/(pregnant+notPregnant)*100)+'%':'—')+'</div><div class="metric-lbl">Success</div></div></div>';
+  h+='<div class="card"><div class="card-hd">Pregnancy testing</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0">'+
+    '<button class="btn-full" onclick="openPregManual()" style="margin-top:0">Manual entry</button>'+
+    '<button class="btn-full" onclick="openPregExcel()" style="margin-top:0;background:var(--blue)">Excel upload</button>'+
+    '</div></div>';
+  if(tests.length){
+    h+='<div class="card"><div class="card-hd">Recent results</div>';
+    h+=tests.slice(0,20).map(function(t){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:var(--border);font-size:12px">'+
+      '<span style="font-weight:600">'+(t.cattle&&t.cattle.tag||'?')+'</span>'+
+      '<span style="color:var(--text2);font-size:11px">'+(t.cattle&&t.cattle.camps?t.cattle.camps.name:'')+'</span>'+
+      '<span class="badge '+(t.result==='Yes'?'badge-green':'badge-red')+'">'+t.result+'</span>'+
+      '<span style="color:var(--text3);font-size:11px">'+t.test_date+'</span></div>';}).join('');
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+async function openPregManual(){
+  var rh=await db.from('herds').select('*,camps(name)').eq('active',true);
+  var herds=rh.data||[];
+  var h='<div class="fg"><label>Select herd</label><select id="pg-herd" onchange="loadPregHerdCattle()">'+
+    '<option value="">— All breeding cows —</option>'+
+    herds.map(function(h){return '<option value="'+h.id+'">'+h.name+(h.camps?' — '+h.camps.name:'')+'</option>';}).join('')+
+    '</select></div>'+
+    '<div class="fg"><label>Test date</label><input id="pg-date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>'+
+    '<div class="sec-lbl">Select result for each animal</div>'+
+    '<div id="pg-cattle-list" style="max-height:350px;overflow-y:auto;border:var(--border);border-radius:8px"></div>'+
+    '<button class="btn-full" onclick="savePregResults()" style="margin-top:12px">Save results</button>';
+  openModal('Pregnancy testing',h);
+  loadPregHerdCattle();
+}
+
+async function loadPregHerdCattle(){
+  var herdId=(document.getElementById('pg-herd')||{}).value;
+  var list=document.getElementById('pg-cattle-list');
+  if(!list)return;
+  list.innerHTML='<div class="loading">Loading…</div>';
+  var cattle=[];
+  if(herdId){
+    var r=await db.from('herd_cattle').select('cattle_id,cattle(id,tag,camps(name))').eq('herd_id',herdId).is('left_date',null);
+    cattle=(r.data||[]).map(function(x){return x.cattle;}).filter(Boolean);
+  } else {
+    cattle=APP.cattle.filter(function(c){return c.status==='Breeding Cow'||c.status==='Heifer';}).slice(0,100);
+  }
+  window._pregCattle=cattle;
+  window._pregResults={};
+  list.innerHTML=cattle.map(function(c,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 8px;border-bottom:var(--border)">'+
+      '<span style="font-weight:600;font-size:13px">'+c.tag+'</span>'+
+      '<span style="font-size:11px;color:var(--text2)">'+(c.camps&&c.camps.name||'')+'</span>'+
+      '<div style="display:flex;gap:6px">'+
+      '<button onclick="setPregResult('+i+',1,this)" style="padding:4px 12px;border:var(--border);border-radius:6px;font-size:12px;background:#fff">Yes</button>'+
+      '<button onclick="setPregResult('+i+',0,this)" style="padding:4px 12px;border:var(--border);border-radius:6px;font-size:12px;background:#fff">No</button>'+
+      '</div></div>';
+  }).join('')||'<div class="empty-state">No cattle found</div>';
+}
+
+function setPregResult(idx,isYes,btn){
+  window._pregResults[idx]=isYes?'Yes':'No';
+  var row=btn.closest('div[style*="border-bottom"]');
+  var btns=row.querySelectorAll('button');
+  btns.forEach(function(b){b.style.background='#fff';b.style.color='';b.style.borderColor='';});
+  btn.style.background=isYes?'var(--green)':'var(--red)';
+  btn.style.color='#fff';
+  btn.style.borderColor=isYes?'var(--green)':'var(--red)';
+}
+
+async function savePregResults(){
+  var date=(document.getElementById('pg-date')||{}).value||new Date().toISOString().split('T')[0];
+  var cattle=window._pregCattle||[];
+  var results=window._pregResults||{};
+  var toInsert=[];
+  Object.keys(results).forEach(function(i){var cow=cattle[parseInt(i)];if(cow)toInsert.push({cattle_id:cow.id,test_date:date,result:results[i]});});
+  if(!toInsert.length){alert('Please set at least one result.');return;}
+  var r=await db.from('pregnancy_tests').insert(toInsert);
+  if(r.error){alert('Error: '+r.error.message);return;}
+  alert(toInsert.length+' results saved.');
+  closeModal();loadBreeding();
+}
+
+async function openPregExcel(){
+  openModal('Upload preg test results',
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">CSV/Excel with two columns: <strong>Tag</strong> and <strong>Pregnant</strong> (Yes/No)</div>'+
+    '<div class="fg"><label>Test date</label><input id="px-date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>'+
+    '<div class="fg"><label>Select file</label><input type="file" id="px-file" accept=".xlsx,.xls,.csv"></div>'+
+    '<button class="btn-full" onclick="processPregExcel()">Upload and save</button>'
+  );
+}
+
+async function processPregExcel(){
+  var file=(document.getElementById('px-file')||{}).files&&document.getElementById('px-file').files[0];
+  if(!file){alert('Please select a file.');return;}
+  var date=(document.getElementById('px-date')||{}).value||new Date().toISOString().split('T')[0];
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      var lines=e.target.result.split(/\r?\n/).filter(function(l){return l.trim();});
+      var toInsert=[];var notFound=[];
+      for(var i=1;i<lines.length;i++){
+        var parts=lines[i].split(',');
+        if(parts.length<2)continue;
+        var tag=parts[0].trim().toUpperCase().replace(/"/g,'');
+        var result=parts[1].trim().replace(/"/g,'').toLowerCase().includes('yes')?'Yes':'No';
+        var cow=APP.cattle.find(function(c){return c.tag===tag;});
+        if(cow)toInsert.push({cattle_id:cow.id,test_date:date,result:result});
+        else notFound.push(tag);
+      }
+      if(!toInsert.length){alert('No matching cattle found.');return;}
+      var r=await db.from('pregnancy_tests').insert(toInsert);
+      if(r.error){alert('Error: '+r.error.message);return;}
+      var msg=toInsert.length+' results saved.';
+      if(notFound.length)msg+=' Not found: '+notFound.join(', ');
+
+
+      alert(msg);closeModal();loadBreeding();
+    }catch(err){alert('Error reading file: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+async function renderBulls(el){
+  var bulls=APP.cattle.filter(function(c){return c.is_bull;});
+  var h='<div class="card"><div class="card-hd"><span>Bulls ('+bulls.length+')</span><button class="add-btn" onclick="openAddBull()">+ Add bull</button></div>';
+  h+=bulls.length?bulls.map(function(b){return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:var(--border)">'+
+    '<div><div style="font-weight:600">'+b.tag+'</div><div style="font-size:12px;color:var(--text2)">'+(b.breed||'—')+' &middot; Born '+(b.birth_year||'?')+'</div>'+
+    '<div style="font-size:12px;color:var(--text2)">'+(b.camps&&b.camps.name||'No camp')+'</div></div>'+
+    '<span class="badge badge-amber">Bull</span></div>';}).join(''):'<div class="empty-state">No bulls registered yet.</div>';
+  h+='</div>';el.innerHTML=h;
+}
+
+function openAddBull(){
+  var farmOpts=APP.farms.map(function(f){return '<option value="'+f.id+'">'+f.name+'</option>';}).join('');
+  var campOpts=APP.camps.map(function(c){return '<option value="'+c.id+'">'+(c.farms?c.farms.name+' — ':'')+c.name+'</option>';}).join('');
+  openModal('Register bull',
+    '<div class="fg"><label>Tag *</label><input id="bl-tag" placeholder="e.g. 21-B01"></div>'+
+    '<div class="fg"><label>Breed</label><select id="bl-breed">'+BREEDS.map(function(b){return '<option>'+b+'</option>';}).join('')+'</select></div>'+
+    '<div class="fg"><label>Farm</label><select id="bl-farm">'+farmOpts+'</select></div>'+
+    '<div class="fg"><label>Camp</label><select id="bl-camp"><option value="">— Not assigned —</option>'+campOpts+'</select></div>'+
+    '<div class="fg"><label>Birth year</label><input id="bl-year" type="number" placeholder="e.g. 2021"></div>'+
+    '<button class="btn-full" onclick="saveAddBull()">Register bull</button>'
+  );
+}
+
+async function saveAddBull(){
+  var tag=(document.getElementById('bl-tag').value||'').trim().toUpperCase();
+  if(!tag){alert('Please enter a tag.');return;}
+  var r=await db.from('cattle').insert({tag:tag,breed:document.getElementById('bl-breed').value,farm_id:document.getElementById('bl-farm').value,camp_id:document.getElementById('bl-camp').value||null,status:'Bull',gender:'Male',is_bull:true,birth_year:parseInt(document.getElementById('bl-year').value)||null,active:true});
+  if(r.error){alert('Error: '+r.error.message);return;}
+  closeModal();loadCattle();loadBreeding();
+}
+
+async function renderHerds(el){
+  var rh=await db.from('herds').select('*,farms(name),camps(name)').eq('active',true);
+  var herds=rh.data||[];
+  window._herdsList=herds;
+  var h='<div class="card"><div class="card-hd"><span>Named herds ('+herds.length+')</span><button class="add-btn" onclick="openNewHerd()">+ New herd</button></div>';
+  h+=herds.length?herds.map(function(herd,hidx){
+    return '<div style="padding:10px 0;border-bottom:var(--border)"><div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+      '<div><div style="font-weight:600;font-size:13px">'+herd.name+'</div>'+
+      '<div style="font-size:12px;color:var(--text2)">'+(herd.farms&&herd.farms.name||'')+' &middot; '+(herd.camps&&herd.camps.name||'No camp')+'</div></div>'+
+      '<button onclick="dissolveHerdIdx('+hidx+')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer">Dissolve</button>'+
+      '</div></div>';
+  }).join(''):'<div class="empty-state">No named herds yet.</div>';
+  h+='</div>';el.innerHTML=h;
+}
+
+function dissolveHerdIdx(i){var h=window._herdsList&&window._herdsList[i];if(h)dissolveHerd(h.id);}
+async function dissolveHerd(id){if(!confirm('Dissolve this herd?'))return;await db.from('herds').update({active:false}).eq('id',id);loadBreeding();}
+
+function openNewHerd(){
+  var farmOpts=APP.farms.map(function(f){return '<option value="'+f.id+'">'+f.name+'</option>';}).join('');
+  var campOpts=APP.camps.filter(function(c){return !c.is_land;}).map(function(c){return '<option value="'+c.id+'">'+(c.farms?c.farms.name+' — ':'')+c.name+'</option>';}).join('');
+  openModal('Create herd',
+    '<div class="fg"><label>Herd name *</label><input id="hd-name" placeholder="e.g. Herd A"></div>'+
+    '<div class="fg"><label>Farm</label><select id="hd-farm">'+farmOpts+'</select></div>'+
+    '<div class="fg"><label>Current camp</label><select id="hd-camp"><option value="">— Not assigned —</option>'+campOpts+'</select></div>'+
+    '<button class="btn-full" onclick="saveNewHerd()">Create herd</button>'
+  );
+}
+
+async function saveNewHerd(){
+  var name=(document.getElementById('hd-name').value||'').trim();
+  if(!name){alert('Please enter a herd name.');return;}
+  var r=await db.from('herds').insert({name:name,farm_id:document.getElementById('hd-farm').value,camp_id:document.getElementById('hd-camp').value||null,active:true});
+  if(r.error){alert('Error: '+r.error.message);return;}
+  closeModal();loadBreeding();
+}
+
+// ── REPORTS ────────────────────────────────────────────────────────
+async function loadReports(){
+  var el=document.getElementById('report-content');
+  if(!el)return;
+  el.innerHTML='<div class="loading">Loading…</div>';
+  if(currentReportTab==='cattle')await reportCattle(el);
+  else if(currentReportTab==='health')await reportHealth(el);
+  else if(currentReportTab==='mating')await reportMating(el);
+  else if(currentReportTab==='farm')await reportFarm(el);
+}
+
+async function reportCattle(el){
+  var year=new Date().getFullYear();
+  var rc=await db.from('calving_records').select('*').gte('birth_date',year+'-01-01');
+  var calves=rc.data||[];
+  var bulls=calves.filter(function(c){return c.gender==='Bull';}).length;
+  var heifers=calves.filter(function(c){return c.gender==='Heifer';}).length;
+  var total=bulls+heifers;
+  var losses=calves.filter(function(c){return c.outcome!=='Alive';}).length;
+  var ageCounts={};
+  var yearMap={'M':2017,'N':2018};
+  APP.cattle.forEach(function(c){var prefix=c.tag.split('-')[0];var yr=yearMap[prefix]||parseInt('20'+prefix)||null;if(yr)ageCounts[yr]=(ageCounts[yr]||0)+1;});
+  var h='<div class="card"><div class="card-hd">Calving YTD</div><div class="metrics" style="margin-bottom:0">'+
+    '<div class="metric"><div class="metric-val">'+bulls+'</div><div class="metric-lbl">Bull calves</div></div>'+
+    '<div class="metric"><div class="metric-val">'+heifers+'</div><div class="metric-lbl">Heifers</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(total?Math.round((total-losses)/total*100)+'%':'—')+'</div><div class="metric-lbl">Success</div></div>'+
+    '</div></div>';
+  h+='<div class="card"><div class="card-hd">Herd age spread</div>';
+  var sortedYears=Object.keys(ageCounts).sort();
+  h+=sortedYears.map(function(yr){var count=ageCounts[yr];var pct=Math.round(count/APP.cattle.length*100);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:var(--border);font-size:12px">'+
+      '<div style="width:40px;font-weight:600">'+yr+'</div>'+
+      '<div style="flex:1;background:#f0f0f0;border-radius:4px;height:8px"><div style="width:'+pct+'%;background:var(--green);border-radius:4px;height:8px"></div></div>'+
+      '<div style="width:60px;text-align:right">'+count+' ('+pct+'%)</div></div>';}).join('')||'<div class="empty-state">No age data</div>';
+  h+='</div>';
+  var rd=await db.from('cattle').select('tag,notes,updated_at').eq('status','Deceased').order('updated_at',{ascending:false}).limit(20);
+  h+='<div class="card"><div class="card-hd">Deaths YTD</div>';
+  h+=(rd.data&&rd.data.length)?rd.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-red">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No deaths recorded</div>';
+  h+='</div>';
+  var rs=await db.from('cattle').select('tag,notes,updated_at').eq('status','Sold').order('updated_at',{ascending:false}).limit(20);
+  h+='<div class="card"><div class="card-hd">Sales YTD</div>';
+  h+=(rs.data&&rs.data.length)?rs.data.map(function(c){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-amber">'+c.tag+'</span><span style="color:var(--text2);margin-left:6px">'+(c.notes||'—')+'</span></div>';}).join(''):'<div class="empty-state">No sales recorded</div>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+async function reportHealth(el){
+  var rl=await db.from('health_logs').select('*,cattle(tag)').order('treatment_date',{ascending:false}).limit(50);
+  var logs=rl.data||[];
+  var treatCounts={};
+  logs.forEach(function(l){treatCounts[l.treatment]=(treatCounts[l.treatment]||0)+1;});
+  var h='<div class="card"><div class="card-hd">Treatment frequency</div>';
+  Object.keys(treatCounts).sort(function(a,b){return treatCounts[b]-treatCounts[a];}).forEach(function(t){h+='<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:var(--border);font-size:12px"><span>'+t+'</span><span class="badge badge-blue">'+treatCounts[t]+'</span></div>';});
+  h+='</div><div class="card"><div class="card-hd">Recent treatments</div>';
+  h+=logs.slice(0,30).map(function(l){return '<div style="padding:7px 0;border-bottom:var(--border);font-size:12px"><span class="badge badge-blue">'+l.treatment+'</span><span style="color:var(--text2);margin-left:6px">'+((l.cattle&&l.cattle.tag)||'—')+' &middot; '+(l.treatment_date||'')+'</span></div>';}).join('');
+  h+='</div>';el.innerHTML=h;
+}
+
+async function reportMating(el){
+  var rm=await db.from('mating_records').select('*,bull:bull_id(tag,breed),herd:herd_id(name)').order('start_date',{ascending:false});
+  var records=rm.data||[];
+  var rp=await db.from('pregnancy_tests').select('*');
+  var tests=rp.data||[];
+  var pregnant=tests.filter(function(t){return t.result==='Yes';}).length;
+  var notPreg=tests.filter(function(t){return t.result==='No';}).length;
+  var h='<div class="metrics">'+
+    '<div class="metric"><div class="metric-val" style="color:var(--green)">'+pregnant+'</div><div class="metric-lbl">Pregnant</div></div>'+
+    '<div class="metric"><div class="metric-val" style="color:var(--red)">'+notPreg+'</div><div class="metric-lbl">Not pregnant</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(pregnant+notPreg?Math.round(pregnant/(pregnant+notPreg)*100)+'%':'—')+'</div><div class="metric-lbl">Rate</div></div>'+
+    '</div>';
+  h+='<div class="card"><div class="card-hd">Mating records</div>';
+  h+=records.map(function(r){return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px"><div style="font-weight:500">'+(r.herd&&r.herd.name||'?')+' &middot; Bull: '+(r.bull&&r.bull.tag||'?')+'</div><div style="color:var(--text2)">'+r.start_date+' → '+(r.end_date||'ongoing')+'</div></div>';}).join('')||'<div class="empty-state">No mating records</div>';
+  h+='</div>';el.innerHTML=h;
+}
+
+async function reportFarm(el){
+  var rc=await db.from('cattle').select('camp_id').eq('active',true);
+  var cattle=rc.data||[];
+  var campCounts={};
+  cattle.forEach(function(c){if(c.camp_id)campCounts[c.camp_id]=(campCounts[c.camp_id]||0)+1;});
+  var farmCamps=APP.camps.filter(function(c){return !c.is_land;});
+  var occupied=farmCamps.filter(function(c){return campCounts[c.id]>0;}).length;
+  var h='<div class="metrics">'+
+    '<div class="metric"><div class="metric-val">'+occupied+'</div><div class="metric-lbl">Occupied</div></div>'+
+    '<div class="metric"><div class="metric-val">'+(farmCamps.length-occupied)+'</div><div class="metric-lbl">Empty</div></div>'+
+    '<div class="metric"><div class="metric-val">'+farmCamps.length+'</div><div class="metric-lbl">Total camps</div></div>'+
+    '</div>';
+  h+='<div class="card"><div class="card-hd">Camp status</div>';
+  h+=farmCamps.map(function(camp){var count=campCounts[camp.id]||0;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:var(--border);font-size:12px">'+
+      '<div><div style="font-weight:500">'+camp.name+'</div>'+(camp.hectares?'<div style="font-size:11px;color:var(--text3)">'+camp.hectares+' ha</div>':'')+'</div>'+
+      (count>0?'<span class="badge badge-green">'+count+' cattle</span>':'<span class="badge badge-gray">Empty</span>')+
+      '</div>';}).join('');
+  h+='</div>';el.innerHTML=h;
+}
+
+function openModal(title,body){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal-bg').classList.add('open');}
+function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function closeModalOutside(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
+</script>
+</body>
+</html>
