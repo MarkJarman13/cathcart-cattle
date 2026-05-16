@@ -6,6 +6,7 @@
 <title>Cathcart Cattle</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 var pinBuffer='';
 function showPinEntry(){var name=document.getElementById('login-manager').value;if(!name){document.getElementById('pin-section').classList.add('hidden');return;}pinBuffer='';updatePinDots();document.getElementById('pin-section').classList.remove('hidden');document.getElementById('pin-error').textContent='';}
 function pinPress(d){if(pinBuffer.length>=4)return;pinBuffer+=d;updatePinDots();if(pinBuffer.length===4)setTimeout(checkPin,150);}
