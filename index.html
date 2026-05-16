@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Cathcart Cattle</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ── INIT ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  var sel=document.getElementById('login-manager');
+  if(sel)sel.addEventListener('change',showPinEntry);
+});
+
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#fff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
@@ -145,7 +152,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="login-card">
     <div class="fg">
       <label>Your name</label>
-      <select id="login-manager" onchange="appShowPin()">
+      <select id="login-manager">
         <option value="">— Select your name —</option>
         <option>Rob Fletcher</option>
         <option>Melkaya</option>
@@ -335,7 +342,6 @@ var WEIGHT_TYPES=['Wean weight','Tracking weight','Sale weight'];
 var CROPS=['Lucern','Teff','Eragrostis','Dry maize','Silage maize','Cabbages'];
 
 // ── PIN LOGIN ──────────────────────────────────────────────────────
-function appShowPin(){showPinEntry();}
 function showPinEntry(){
   var name=document.getElementById('login-manager').value;
   if(!name){document.getElementById('pin-section').classList.add('hidden');return;}
