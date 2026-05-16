@@ -6,53 +6,6 @@
 <title>Cathcart Cattle</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-var pinBuffer='';
-function showPinEntry(){
-  var name=document.getElementById('login-manager').value;
-  if(!name){document.getElementById('pin-section').classList.add('hidden');return;}
-  pinBuffer='';
-  updatePinDots();
-  document.getElementById('pin-section').classList.remove('hidden');
-  document.getElementById('pin-error').textContent='';
-}
-function pinPress(d){
-  if(pinBuffer.length>=4)return;
-  pinBuffer+=d;
-  updatePinDots();
-  if(pinBuffer.length===4)setTimeout(function(){checkPin();},150);
-}
-function pinDelete(){pinBuffer=pinBuffer.slice(0,-1);updatePinDots();}
-function pinClear(){pinBuffer='';updatePinDots();}
-function updatePinDots(){
-  for(var i=0;i<4;i++){
-    var dot=document.getElementById('pd'+i);
-    if(dot)dot.classList.toggle('filled',i<pinBuffer.length);
-  }
-}
-function checkPin(){
-  var name=document.getElementById('login-manager').value;
-  var pins={'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'};
-  var correct=pins[name];
-  if(pinBuffer!==correct){
-    document.getElementById('pin-error').textContent='Incorrect PIN — try again';
-    pinBuffer='';updatePinDots();return;
-  }
-  document.getElementById('pin-error').textContent='';
-  // Wait for main script to be ready then call doLogin
-  var attempts=0;
-  var wait=setInterval(function(){
-    attempts++;
-    if(typeof doLogin==='function'){
-      clearInterval(wait);
-      doLogin(name);
-    } else if(attempts>20){
-      clearInterval(wait);
-      alert('App not ready yet — please refresh and try again.');
-    }
-  },100);
-}
-</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#1a6b3a;--green-mid:#2d9652;--green-light:#e8f5ed;--amber:#b45309;--amber-light:#fef3c7;--red:#991b1b;--red-light:#fee2e2;--blue:#1e40af;--blue-light:#dbeafe;--bg:#f4f6f4;--card:#fff;--border:0.5px solid #dde5dd;--text:#1a1a1a;--text2:#555;--text3:#888;--radius:10px}
@@ -192,7 +145,7 @@ button{font-family:inherit;cursor:pointer}
   <div class="login-card">
     <div class="fg">
       <label>Your name</label>
-      <select id="login-manager" onchange="showPinEntry()">
+      <select id="login-manager" onchange="appShowPin()">
         <option value="">— Select your name —</option>
         <option>Rob Fletcher</option>
         <option>Melkaya</option>
@@ -341,6 +294,7 @@ var AKEY='sk-ant-api03-vR4AWGWehs95R0IRcSh7csszdhkj-fQkIacQ6xLBdA99VxhGIg11mZl-D
 var db;
 window.addEventListener('load',function(){db=supabase.createClient(SURL,SKEY);});
 
+var pinBuffer='';
 var PINS={'Rob Fletcher':'6482','Melkaya':'4009','Frank Winterton':'5684','Browns':'9379','Jarmans':'1287'};
 var pinBuffer='';
 
@@ -381,6 +335,7 @@ var WEIGHT_TYPES=['Wean weight','Tracking weight','Sale weight'];
 var CROPS=['Lucern','Teff','Eragrostis','Dry maize','Silage maize','Cabbages'];
 
 // ── PIN LOGIN ──────────────────────────────────────────────────────
+function appShowPin(){showPinEntry();}
 function showPinEntry(){
   var name=document.getElementById('login-manager').value;
   if(!name){document.getElementById('pin-section').classList.add('hidden');return;}
