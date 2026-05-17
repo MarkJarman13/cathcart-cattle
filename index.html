@@ -200,14 +200,14 @@ button{font-family:inherit;cursor:pointer}
     <!-- DASHBOARD -->
     <div class="screen active" id="scr-dashboard">
       <div class="metrics">
-        <div class="metric"><div class="metric-val" id="d-total">—</div><div class="metric-lbl">Total cattle</div></div>
-        <div class="metric"><div class="metric-val" id="d-sessions">—</div><div class="metric-lbl">Sessions</div></div>
-        <div class="metric"><div class="metric-val" id="d-calves">—</div><div class="metric-lbl">Calves YTD</div></div>
+        <div class="metric"><div class="metric-val" id="d-breeding">—</div><div class="metric-lbl">Breeding cows</div></div>
+        <div class="metric"><div class="metric-val" id="d-heifers" style="color:var(--amber)">—</div><div class="metric-lbl">Replacement heifers</div></div>
+        <div class="metric"><div class="metric-val" id="d-bulls" style="color:var(--blue)">—</div><div class="metric-lbl">Bulls</div></div>
       </div>
       <div class="metrics">
+        <div class="metric"><div class="metric-val" id="d-calves" style="color:var(--green)">—</div><div class="metric-lbl">Calves</div></div>
         <div class="metric"><div class="metric-val" id="d-deaths" style="color:var(--red)">—</div><div class="metric-lbl">Deaths YTD</div></div>
-        <div class="metric"><div class="metric-val" id="d-sales" style="color:var(--amber)">—</div><div class="metric-lbl">Sales YTD</div></div>
-        <div class="metric"><div class="metric-val" id="d-frank" style="color:var(--blue)">—</div><div class="metric-lbl">Frank's cattle</div></div>
+        <div class="metric"><div class="metric-val" id="d-sessions">—</div><div class="metric-lbl">Sessions</div></div>
       </div>
       <div class="card"><div class="card-hd">Cattle by farm</div><div id="farm-summary"><div class="loading">Loading…</div></div></div>
       <div class="card"><div class="card-hd">Recent activity</div><div id="recent-sessions"><div class="loading">Loading…</div></div></div>
@@ -223,6 +223,7 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab" onclick="switchFarmView(this,'Chilton')">Chilton</button>
       </div>
       <div id="farm-view-content"><div class="loading">Loading…</div></div>
+      <div id="lands-view-content"></div>
     </div>
 
     <!-- CATTLE -->
@@ -231,9 +232,15 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab active" onclick="switchCattleTab(this,'all')">All</button>
         <button class="ftab" onclick="switchCattleTab(this,'Guildford/Browndale')">Guild/Brown</button>
         <button class="ftab" onclick="switchCattleTab(this,'Chilton')">Chilton</button>
-        <button class="ftab" onclick="switchCattleTab(this,'frank')">Frank's</button>
         <button class="ftab" onclick="switchCattleTab(this,'bulls')">Bulls</button>
         <button class="ftab" onclick="switchCattleTab(this,'oxen')">Oxen</button>
+        <button class="ftab" onclick="switchCattleTab(this,'frank')">Frank's</button>
+      </div>
+      <div class="ftabs" id="cattle-subtabs" style="margin-top:-6px">
+        <button class="ftab active" id="csub-all" onclick="switchCattleSubTab(this,'all')">All types</button>
+        <button class="ftab" onclick="switchCattleSubTab(this,'Breeding Cow')">Breeding</button>
+        <button class="ftab" onclick="switchCattleSubTab(this,'Heifer')">Heifers</button>
+        <button class="ftab" onclick="switchCattleSubTab(this,'Calf')">Calves</button>
       </div>
       <div class="card">
         <div class="card-hd"><span>Cattle register</span><button class="add-btn" onclick="openAddCow()">+ Add</button></div>
@@ -255,6 +262,11 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab" onclick="switchBreedTab(this,'bulls')">Bulls</button>
         <button class="ftab" onclick="switchBreedTab(this,'herds')">Herds</button>
       </div>
+      <div class="ftabs" id="breed-farm-tabs" style="margin-top:-6px">
+        <button class="ftab active" onclick="switchBreedFarm(this,'all')">All farms</button>
+        <button class="ftab" onclick="switchBreedFarm(this,'Guildford/Browndale')">Guild/Brown</button>
+        <button class="ftab" onclick="switchBreedFarm(this,'Chilton')">Chilton</button>
+      </div>
       <div id="breed-content"><div class="loading">Loading…</div></div>
     </div>
 
@@ -265,6 +277,11 @@ button{font-family:inherit;cursor:pointer}
         <button class="ftab" onclick="switchReportTab(this,'health')">Health</button>
         <button class="ftab" onclick="switchReportTab(this,'mating')">Mating</button>
         <button class="ftab" onclick="switchReportTab(this,'farm')">Farm</button>
+      </div>
+      <div class="ftabs" id="report-farm-tabs" style="margin-top:-6px">
+        <button class="ftab active" onclick="switchReportFarm(this,'all')">All farms</button>
+        <button class="ftab" onclick="switchReportFarm(this,'Guildford/Browndale')">Guild/Brown</button>
+        <button class="ftab" onclick="switchReportFarm(this,'Chilton')">Chilton</button>
       </div>
       <div id="report-content"><div class="loading">Loading…</div></div>
     </div>
@@ -307,7 +324,6 @@ var WORK_TYPES=[
   {l:'Health treatment',i:'ti-stethoscope',cat:'health'},
   {l:'Eye treatment',i:'ti-eye',cat:'health'},
   {l:'Deworming',i:'ti-pill',cat:'health'},
-  {l:'Pregnancy check',i:'ti-baby-carriage',cat:'management'},
   {l:'Weight recording',i:'ti-scale',cat:'management'},
   {l:'Calving record',i:'ti-heart',cat:'management'},
   {l:'Camp rotation',i:'ti-arrows-exchange',cat:'management'},
@@ -412,41 +428,6 @@ function showScreen(name,btn){
 }
 
 // ── DASHBOARD ──────────────────────────────────────────────────────
-async function loadDashboard(){
-  try{
-    var year=new Date().getFullYear();
-    var rc=await db.from('cattle').select('id,farm_id,tag',{count:'exact'}).eq('active',true);
-    var allCattle=rc.data||[];
-    var rs=await db.from('work_sessions').select('id',{count:'exact'}).neq('status','cancelled');
-    var rv=await db.from('calving_records').select('id',{count:'exact'}).gte('birth_date',year+'-01-01');
-    var rd=await db.from('cattle').select('id',{count:'exact'}).eq('status','Deceased').gte('updated_at',year+'-01-01');
-    var rsl=await db.from('cattle').select('id',{count:'exact'}).eq('status','Sold').gte('updated_at',year+'-01-01');
-    document.getElementById('d-total').textContent=rc.count||0;
-    document.getElementById('d-sessions').textContent=rs.count||0;
-    document.getElementById('d-calves').textContent=rv.count||0;
-    document.getElementById('d-deaths').textContent=rd.count||0;
-    document.getElementById('d-sales').textContent=rsl.count||0;
-    // frank's cattle count
-    var frankCount=allCattle.filter(function(c){return /F\d*$/.test(c.tag)||c.tag.includes('F');}).length;
-    document.getElementById('d-frank').textContent=frankCount;
-    // farm summary
-    var fs=document.getElementById('farm-summary');
-    fs.innerHTML=APP.farms.map(function(f){
-      var n=allCattle.filter(function(c){return c.farm_id===f.id;}).length;
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:var(--border);font-size:13px"><span style="font-weight:500">'+f.name+'</span><span class="badge badge-green">'+n+' cattle</span></div>';
-    }).join('');
-    // recent sessions
-    var rss=await db.from('work_sessions').select('*,farms(name),managers(name)').order('session_date',{ascending:false}).limit(6);
-    var sess=rss.data||[];
-    var el=document.getElementById('recent-sessions');
-    el.innerHTML=sess.length?sess.map(function(s){
-      var cancelled=s.status==='cancelled';
-      return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px;opacity:'+(cancelled?.5:1)+'">'+
-        '<div style="font-weight:500">'+(s.work_type||'')+(cancelled?' <span class="badge badge-gray">Cancelled</span>':'')+'</div>'+
-        '<div style="color:var(--text2);margin-top:2px">'+(s.session_date||'')+' &middot; '+((s.farms&&s.farms.name)||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div></div>';
-    }).join(''):'<div class="empty-state">No sessions yet</div>';
-  }catch(e){console.error(e);}
-}
 
 // ── FARM VIEW ──────────────────────────────────────────────────────
 var currentFarmView='Guildford/Browndale';
@@ -493,6 +474,12 @@ async function loadFarmView(farmName){
   });
   h+='</div>';
   el.innerHTML=h;
+}
+
+
+function openCampIdx(i){
+  var c=window._farmCampList&&window._farmCampList[i];
+  if(c)openCampDetail(c.id,c.name);
 }
 
 async function openCampDetail(campId,campName){
@@ -669,7 +656,13 @@ function renderStep(){
   if(WS.step===1){
     h+='<div class="option-grid">';
     APP.farms.forEach(function(f){h+='<div class="opt-btn'+(WS.farmId===f.id?' sel':'')+'" onclick="wsSetFarm(\''+f.id+'\',\''+f.name+'\',this)"><i class="ti ti-map-pin"></i>'+f.name+'</div>';});
-    h+='</div><div class="nav-row"><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
+    h+='</div>';
+    h+='<div class="sec-lbl">Select herd (optional)</div><div class="pill-group">';
+    var fherds=(window._allHerds||[]).filter(function(h){return !WS.farmId||h.farm_id===WS.farmId;});
+    fherds.forEach(function(herd,i){h+='<div class="pill'+(WS.herdId===herd.id?' sel':'')+'" onclick="wsSetHerd(\''+herd.id+'\',\''+herd.name+'\',this)">'+herd.name+'</div>';});
+    if(!fherds.length)h+='<div style="font-size:12px;color:var(--text3)">No herds yet — create in Breeding tab</div>';
+    h+='</div>';
+    h+='<div class="nav-row"><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===2){
     h+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Select all work types — you can choose multiple</div>';
@@ -755,6 +748,19 @@ function renderStep(){
     else{h+=farmCattle.map(function(c){var sel=WS.selectedCattle.includes(c.id);return '<div class="cattle-select-item'+(sel?' selected':'')+'" id="ci-'+c.id+'" onclick="wsToggleCow(\''+c.id+'\')">'+'<div class="cattle-checkbox'+(sel?' checked':'')+'">'+( sel?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':'' )+'</div>'+'<div><div style="font-weight:600">'+c.tag+'</div><div style="font-size:11px;color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</div></div></div>';}).join('');}
     h+='</div>';
     h+='<div id="ws-sel-count" style="font-size:12px;color:var(--green);margin-top:8px;font-weight:500">'+WS.selectedCattle.length+' cattle selected</div>';
+    // Weight recording input
+    if(WS.workTypes.includes('Weight recording')){
+      h+='<div class="sec-lbl">Weight type</div>';
+      h+='<div class="pill-group">';
+      WEIGHT_TYPES.forEach(function(wt,wi){h+='<div class="pill'+(WS.weightType===wt?' sel':'')+'" onclick="wsSetWeightTypeIdx('+wi+',this)">'+wt+'</div>';});
+      h+='</div>';
+      h+='<div style="font-size:12px;color:var(--text2);margin-bottom:8px">Upload CSV with Tag,Weight columns or enter average weight:</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+        '<input id="ws-avg-weight" type="number" class="search-input" placeholder="Average weight (kg)" style="margin-bottom:0">'+
+        '<div class="photo-btn" onclick="triggerWeightUpload()"><i class="ti ti-file-spreadsheet"></i>Upload weights<input type="file" id="wt-xl" accept=".csv,.xlsx" style="display:none" onchange="handleWeightUpload(event)"></div>'+
+        '</div>';
+      if(WS._weightStatus)h+='<div style="background:var(--blue-light);color:var(--blue);padding:8px;border-radius:6px;font-size:12px;margin-bottom:8px">'+WS._weightStatus+'</div>';
+    }
     h+='<div class="nav-row"><button class="btn-back" onclick="wsPrev()">&larr; Back</button><button class="btn-next" onclick="wsNext()">Next &rarr;</button></div>';
 
   } else if(WS.step===5){
@@ -915,6 +921,7 @@ async function loadSessions(){
       (s.notes?'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+s.notes+'</div>':'')+'</div>'+
       (!cancelled?'<button onclick="openEditSession(\''+s.id+'\')" style="background:var(--green-light);color:var(--green);border:none;border-radius:6px;padding:4px 8px;font-size:11px;margin-left:6px;flex-shrink:0">Edit</button>':'')+
       (!cancelled?'<button onclick="cancelSession(\''+s.id+'\')" style="background:var(--red-light);color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:11px;margin-left:4px;flex-shrink:0">Cancel</button>':'')+
+      '<button onclick="deleteSession(\''+s.id+'\')" style="background:#fff;color:var(--text3);border:var(--border);border-radius:6px;padding:4px 8px;font-size:11px;margin-left:4px;flex-shrink:0">&times; Delete</button>'+
       '</div></div>';
   }).join(''):'<div class="empty-state">No sessions yet</div>';
 }
@@ -1456,6 +1463,357 @@ async function reportFarm(el){
   h+='</div>';el.innerHTML=h;
 }
 
+
+// ── V5.1 NEW FUNCTIONS ─────────────────────────────────────────────
+
+// Dashboard - updated load
+var _cattleSubFilter = 'all';
+var _reportFarmFilter = 'all';
+var _breedFarmFilter = 'all';
+
+async function loadDashboard(){
+  try{
+    var year=new Date().getFullYear();
+    var rc=await db.from('cattle').select('id,farm_id,tag,status,is_bull',{count:'exact'}).eq('active',true);
+    var allCattle=rc.data||[];
+    var breeding=allCattle.filter(function(c){return c.status==='Breeding Cow';}).length;
+    var heifers=allCattle.filter(function(c){return c.status==='Heifer';}).length;
+    var bulls=allCattle.filter(function(c){return c.is_bull||c.status==='Bull';}).length;
+    var calves=allCattle.filter(function(c){return c.status==='Calf';}).length;
+    var rs=await db.from('work_sessions').select('id',{count:'exact'}).neq('status','cancelled');
+    var rd=await db.from('cattle').select('id',{count:'exact'}).eq('status','Deceased').gte('updated_at',year+'-01-01');
+    document.getElementById('d-breeding').textContent=breeding;
+    document.getElementById('d-heifers').textContent=heifers;
+    document.getElementById('d-bulls').textContent=bulls;
+    document.getElementById('d-calves').textContent=calves;
+    document.getElementById('d-deaths').textContent=rd.count||0;
+    document.getElementById('d-sessions').textContent=rs.count||0;
+    // Farm summary
+    var fs=document.getElementById('farm-summary');
+    fs.innerHTML=APP.farms.map(function(f){
+      var n=allCattle.filter(function(c){return c.farm_id===f.id;}).length;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:var(--border);font-size:13px"><span style="font-weight:500">'+f.name+'</span><span class="badge badge-green">'+n+' cattle</span></div>';
+    }).join('');
+    // Recent sessions with herd detail
+    var rss=await db.from('work_sessions').select('*,farms(name),managers(name)').order('session_date',{ascending:false}).limit(6);
+    var sess=rss.data||[];
+    var el=document.getElementById('recent-sessions');
+    el.innerHTML=sess.length?sess.map(function(s){
+      var cancelled=s.status==='cancelled';
+      return '<div style="padding:8px 0;border-bottom:var(--border);font-size:12px;opacity:'+(cancelled?.5:1)+'">'+
+        '<div style="font-weight:500">'+(s.work_type||'')+(cancelled?' <span class="badge badge-gray">Cancelled</span>':'')+'</div>'+
+        '<div style="color:var(--text2);margin-top:2px">'+(s.session_date||'')+' &middot; '+((s.farms&&s.farms.name)||'')+' &middot; '+((s.managers&&s.managers.name)||'')+'</div></div>';
+    }).join(''):'<div class="empty-state">No sessions yet</div>';
+    // Load herds for work session
+    var rh=await db.from('herds').select('*').eq('active',true);
+    window._allHerds=rh.data||[];
+  }catch(e){console.error(e);}
+}
+
+// Cattle sub-filter
+function switchCattleSubTab(btn,status){
+  document.querySelectorAll('#cattle-subtabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  _cattleSubFilter=status;
+  renderCattleTable();
+}
+
+// Updated renderCattleTable with sub-filter
+var _origRenderCattleTable = renderCattleTable;
+renderCattleTable = function(){
+  var q=(document.getElementById('cattle-search')||{}).value||'';
+  q=q.toLowerCase();
+  var list=APP.cattle.filter(function(c){
+    var isFrank=/F/.test(c.tag);
+    var mf=APP.cattleFilter==='all'||
+      (APP.cattleFilter==='frank'&&isFrank)||
+      (APP.cattleFilter==='bulls'&&c.is_bull)||
+      (APP.cattleFilter==='oxen'&&c.is_ox)||
+      (!['frank','bulls','oxen'].includes(APP.cattleFilter)&&c.farms&&c.farms.name===APP.cattleFilter);
+    var ms=_cattleSubFilter==='all'||c.status===_cattleSubFilter;
+    var mq=!q||c.tag.toLowerCase().includes(q)||(c.breed||'').toLowerCase().includes(q)||((c.camps&&c.camps.name)||'').toLowerCase().includes(q);
+    return mf&&ms&&mq;
+  });
+  var tb=document.getElementById('cattle-tbody');
+  tb.innerHTML=list.length?list.map(function(c){
+    var isFrank=/F/.test(c.tag);
+    var bullBadge=c.is_bull?'<span class="badge badge-amber" style="margin-left:3px;font-size:9px">Bull</span>':'';
+    var frankBadge=isFrank?'<span class="badge badge-blue" style="margin-left:3px;font-size:9px">F</span>':'';
+    return '<tr onclick="openCowProfile(\'' + c.id + '\')" style="cursor:pointer">' +
+      '<td style="font-weight:600">'+c.tag+frankBadge+bullBadge+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+(c.breed||'—')+'</td>'+
+      '<td style="font-size:11px;color:var(--text2)">'+((c.camps&&c.camps.name)||'—')+'</td>'+
+      '<td><span class="badge badge-green" style="font-size:10px">'+(c.status||'—')+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="4" class="empty-state">No cattle found</td></tr>';
+};
+
+// Work session herd functions
+function wsSetHerd(id,name,el){
+  WS.herdId=id; WS.herdName=name;
+  el.closest('.pill-group').querySelectorAll('.pill').forEach(function(p){p.classList.remove('sel');});
+  el.classList.add('sel');
+}
+function triggerWeightUpload(){var el=document.getElementById("wt-xl");if(el)el.click();}
+function wsSetWeightTypeIdx(i,el){wsSetWeightType(WEIGHT_TYPES[i],el);}
+function wsSetWeightType(wt,el){
+  WS.weightType=wt;
+  el.closest('.pill-group').querySelectorAll('.pill').forEach(function(p){p.classList.remove('sel');});
+  el.classList.add('sel');
+}
+
+async function handleWeightUpload(event){
+  var file=event.target.files[0]; if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var lines=e.target.result.split(/\r?\n/).filter(function(l){return l.trim();});
+
+
+      var weights={};
+      var start=lines[0]&&lines[0].toLowerCase().includes('tag')?1:0;
+      for(var i=start;i<lines.length;i++){
+        var parts=lines[i].split(',');
+        if(parts.length<2)continue;
+        var tag=parts[0].trim().replace(/"/g,'').toUpperCase();
+        var wt=parseFloat(parts[1].trim().replace(/"/g,''));
+        if(tag&&!isNaN(wt))weights[tag]=wt;
+      }
+      WS._weightData=weights;
+      WS._weightStatus='✓ '+Object.keys(weights).length+' weights loaded from file';
+      renderStep();
+    }catch(err){WS._weightStatus='Error reading file: '+err.message;renderStep();}
+  };
+  reader.readAsText(file);
+}
+
+// Delete session
+async function deleteSession(id){
+  if(!confirm('Permanently delete this session? This cannot be undone.'))return;
+  await db.from('session_cattle').delete().eq('session_id',id);
+  await db.from('session_treatments').delete().eq('session_id',id);
+  await db.from('health_logs').delete().eq('session_id',id);
+  await db.from('work_sessions').delete().eq('id',id);
+  loadSessions(); loadDashboard();
+}
+
+// Farm tab - load lands
+async function loadFarmView(farmName){
+  currentFarmView=farmName;
+  var el=document.getElementById('farm-view-content');
+  var landsEl=document.getElementById('lands-view-content');
+  el.innerHTML='<div class="loading">Loading…</div>';
+  landsEl.innerHTML='';
+  var farm=APP.farms.find(function(f){return f.name===farmName;});
+  if(!farm){el.innerHTML='<div class="empty-state">Farm not found</div>';return;}
+  var allCamps=APP.camps.filter(function(c){return c.farm_id===farm.id;});
+  var farmCamps=allCamps.filter(function(c){return !c.is_land;});
+  var farmLands=allCamps.filter(function(c){return c.is_land;});
+  // cattle counts
+  var rc=await db.from('cattle').select('id,camp_id').eq('farm_id',farm.id).eq('active',true);
+  var cattle=rc.data||[];
+  var campCounts={};
+  cattle.forEach(function(c){if(c.camp_id)campCounts[c.camp_id]=(campCounts[c.camp_id]||0)+1;});
+  // camps grid
+  var h='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px">Grazing camps</div>';
+  h+='<div class="camp-grid">';
+  window._farmCampList=farmCamps;
+farmCamps.forEach(function(camp,ci){
+    var count=campCounts[camp.id]||0;
+    h+='<div class="camp-card '+(count>0?'occupied':'empty')+'" onclick="openCampIdx('+ci+')">';
+    h+='<div class="camp-card-name">'+camp.name+'</div>';
+    h+='<div class="camp-card-count">'+(count>0?count:'—')+'</div>';
+    h+='<div class="camp-card-lbl">'+(count>0?'cattle':'empty')+'</div>';
+    if(camp.hectares)h+='<div style="font-size:10px;color:var(--text3);margin-top:2px">'+camp.hectares+' ha</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
+  // lands section
+  if(farmLands.length){
+    // get crop records
+    var landIds=farmLands.map(function(l){return l.id;});
+    var cr=await db.from('crop_records').select('*').in('camp_id',landIds).eq('active',true);
+    var crops=cr.data||[];
+    var lh='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin:16px 0 8px">Lands & crops</div>';
+    lh+='<div class="camp-grid">';
+    window._farmLandList=farmLands;
+farmLands.forEach(function(land,li){
+      var landCrops=crops.filter(function(c){return c.camp_id===land.id;});
+      lh+='<div class="camp-card '+(landCrops.length>0?'occupied':'empty')+'" onclick="openLandIdx('+li+')">' +
+        '<div class="camp-card-name">'+land.name+'</div>'+
+        '<div style="font-size:11px;margin-top:4px">'+(landCrops.length?landCrops.map(function(c){return '<span class="badge badge-green" style="font-size:9px;margin:1px">'+c.crop_name+'</span>';}).join(''):'<span style="color:var(--text3);font-size:11px">No crops</span>')+'</div>'+
+        (land.hectares?'<div style="font-size:10px;color:var(--text3);margin-top:4px">'+land.hectares+' ha</div>':'')+
+        '</div>';
+    });
+    lh+='</div>';
+    landsEl.innerHTML=lh;
+  }
+}
+
+
+function openLandIdx(i){
+  var l=window._farmLandList&&window._farmLandList[i];
+  if(l)openLandDetail(l.id,l.name);
+}
+
+async function openLandDetail(landId,landName){
+  window._currentLandId=landId; window._currentLandName=landName;
+  openModal(landName,'<div class="loading">Loading…</div>');
+  var cr=await db.from('crop_records').select('*').eq('camp_id',landId).order('plant_date',{ascending:false});
+  var crops=cr.data||[];
+  var land=APP.camps.find(function(c){return c.id===landId;});
+  var h=(land&&land.hectares?'<div style="font-size:12px;color:var(--text2);margin-bottom:12px">'+land.hectares+' hectares</div>':'');
+  h+='<div class="sec-lbl">Current crops ('+crops.filter(function(c){return c.active;}).length+')</div>';
+  var active=crops.filter(function(c){return c.active;});
+  if(active.length){
+    window._activeCrops=active;
+h+=active.map(function(c,ci){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:var(--border);font-size:12px">'+
+      '<div><span class="badge badge-green">'+c.crop_name+'</span>'+(c.plant_date?' <span style="color:var(--text2)">Planted: '+c.plant_date+'</span>':'')+'</div>'+
+      '<button onclick="removeCropIdx('+ci+')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button>'+
+      '</div>';}).join('');
+  } else {
+    h+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px">No active crops</div>';
+  }
+  h+='<div class="sec-lbl">Add crop</div>';
+  h+='<div class="pill-group" id="crop-pills">';
+  CROPS.forEach(function(c){h+='<div class="pill" onclick="selectCrop(this)">'+c+'</div>';});
+  h+='</div>';
+  h+='<div class="fg"><label>Plant date</label><input id="crop-date" type="date" value="'+new Date().toISOString().split('T')[0]+'"></div>';
+  h+='<button class="btn-full" onclick="addCropCurrent()">Add crop</button>';
+  document.getElementById('modal-body').innerHTML=h;
+}
+
+function addCropCurrent(){addCrop(window._currentLandId,window._currentLandName);}
+function selectCrop(el){
+  document.querySelectorAll('#crop-pills .pill').forEach(function(p){p.classList.remove('sel');});
+  el.classList.add('sel');
+}
+
+async function addCrop(landId,landName){
+  var sel=document.querySelector('#crop-pills .pill.sel');
+  if(!sel){alert('Please select a crop.');return;}
+  var date=(document.getElementById('crop-date')||{}).value||null;
+  var r=await db.from('crop_records').insert({camp_id:landId,crop_name:sel.textContent,plant_date:date,active:true});
+  if(r.error){alert('Error: '+r.error.message);return;}
+  openLandDetail(landId,landName);
+  loadFarmView(currentFarmView);
+}
+
+
+function removeCropIdx(i){
+  var c=window._activeCrops&&window._activeCrops[i];
+  var l=window._farmLandList&&window._farmLandList.find(function(x){return c&&x.id===c.camp_id;});
+  if(c)removeCrop(c.id,c.camp_id,l?l.name:'');
+}
+
+async function removeCrop(cropId,landId,landName){
+  if(!confirm('Remove this crop?'))return;
+  await db.from('crop_records').update({active:false}).eq('id',cropId);
+  openLandDetail(landId,landName);
+  loadFarmView(currentFarmView);
+}
+
+// Report farm filter
+function switchReportFarm(btn,farm){
+  document.querySelectorAll('#report-farm-tabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  _reportFarmFilter=farm;
+  loadReports();
+}
+
+// Breed farm filter
+function switchBreedFarm(btn,farm){
+  document.querySelectorAll('#breed-farm-tabs .ftab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  _breedFarmFilter=farm;
+  loadBreeding();
+}
+
+// Herd management - add/view cattle in herd
+async function openHerdDetail(herdId,herdName){
+  window._currentHerdId=herdId; window._currentHerdName=herdName;
+  openModal(herdName,'<div class="loading">Loading…</div>');
+  var r=await db.from('herd_cattle').select('*,cattle(tag,breed,camps(name))').eq('herd_id',herdId).is('left_date',null);
+  var members=r.data||[];
+  window._herdDetail={id:herdId,name:herdName,members:members};
+  var h='<div style="font-size:13px;color:var(--text2);margin-bottom:12px">'+members.length+' cattle in this herd</div>';
+  if(members.length){
+    h+='<div style="max-height:200px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:12px">';
+    h+=members.map(function(m,i){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:var(--border);font-size:12px">'+
+      '<span style="font-weight:600">'+(m.cattle&&m.cattle.tag||'—')+'</span>'+
+      '<span style="color:var(--text2)">'+(m.cattle&&m.cattle.breed||'')+'</span>'+
+      '<button onclick="removeFromHerd('+i+')" style="background:var(--red-light);color:var(--red);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Remove</button>'+
+      '</div>';}).join('');
+    h+='</div>';
+  }
+  h+='<div class="sec-lbl">Add cattle to herd</div>';
+  h+='<input class="search-input" id="herd-search" placeholder="Search tag…" oninput="filterHerdCattle()">';
+  var memberIds=members.map(function(m){return m.cattle_id;});
+  var available=APP.cattle.filter(function(c){return !memberIds.includes(c.id);});
+  window._herdAvail=available;
+  h+='<div id="herd-cattle-list" style="max-height:200px;overflow-y:auto;border:var(--border);border-radius:8px;margin-bottom:10px">';
+  h+=available.map(function(c,i){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:var(--border);font-size:12px" data-tag="'+c.tag+'">'+
+    '<span><strong>'+c.tag+'</strong> <span style="color:var(--text2)">'+(c.breed||'')+(c.camps?' &middot; '+c.camps.name:'')+'</span></span>'+
+    '<button onclick="addToHerd('+i+')" style="background:var(--green-light);color:var(--green);border:none;border-radius:4px;padding:2px 8px;font-size:11px">Add</button>'+
+    '</div>';}).join('');
+  h+='</div>';
+  h+='<div class="sec-lbl">Or upload CSV (Tag column)</div>';
+  h+='<input type="file" id="herd-csv" accept=".csv" style="margin-bottom:8px;width:100%">';
+  h+='<button class="btn-full" onclick="addHerdFromCSVCurrent()">Upload and add</button>';
+  document.getElementById('modal-body').innerHTML=h;
+}
+
+function addHerdFromCSVCurrent(){addHerdFromCSV(window._currentHerdId,window._currentHerdName);}
+function filterHerdCattle(){
+  var q=(document.getElementById('herd-search').value||'').toLowerCase();
+  document.querySelectorAll('#herd-cattle-list > div').forEach(function(el){
+    el.style.display=(!q||(el.dataset.tag||'').toLowerCase().includes(q))?'':'none';
+  });
+}
+
+async function addToHerd(idx){
+  var c=window._herdAvail[idx];
+  var h=window._herdDetail;
+  if(!c||!h)return;
+  var today=new Date().toISOString().split('T')[0];
+  await db.from('herd_cattle').insert({herd_id:h.id,cattle_id:c.id,joined_date:today});
+  openHerdDetail(h.id,h.name);
+}
+
+async function removeFromHerd(idx){
+  var m=window._herdDetail&&window._herdDetail.members[idx];
+  if(!m||!confirm('Remove from herd?'))return;
+  await db.from('herd_cattle').delete().eq('id',m.id);
+  openHerdDetail(window._herdDetail.id,window._herdDetail.name);
+}
+
+async function addHerdFromCSV(herdId,herdName){
+  var file=(document.getElementById('herd-csv')||{}).files&&document.getElementById('herd-csv').files[0];
+  if(!file){alert('Please select a CSV file.');return;}
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    var lines=e.target.result.split(/\r?\n/).filter(function(l){return l.trim();});
+    var tags=[];
+    var start=lines[0]&&lines[0].toLowerCase().includes('tag')?1:0;
+    for(var i=start;i<lines.length;i++){
+      var tag=lines[i].split(',')[0].trim().replace(/"/g,'').toUpperCase();
+      if(tag)tags.push(tag);
+    }
+    var matched=APP.cattle.filter(function(c){return tags.includes(c.tag);});
+    var today=new Date().toISOString().split('T')[0];
+    if(matched.length){
+      await db.from('herd_cattle').insert(matched.map(function(c){return{herd_id:herdId,cattle_id:c.id,joined_date:today};}));
+    }
+    var notFound=tags.filter(function(t){return !APP.cattle.find(function(c){return c.tag===t;});});
+    var msg=matched.length+' cattle added to herd.';
+    if(notFound.length)msg+=' Not found: '+notFound.join(', ');
+    alert(msg);
+    openHerdDetail(herdId,herdName);
+  };
+  reader.readAsText(file);
+}
+
+// Update renderHerds to open detail on tap
 function openModal(title,body){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal-bg').classList.add('open');}
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function closeModalOutside(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
